@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ondine — Run LLMs on Your Entire Dataset</title>
+  <meta name="description" content="Open-source data processing engine. Run any LLM on every row of your DataFrame. Structured output, cost control, checkpointing. Built for data teams." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080808;
+      --bg2: #0f0f0f;
+      --fg: #e8e8e8;
+      --fg-dim: #999;
+      --accent: #2dd4bf;
+      --accent-dim: rgba(45,212,191,0.10);
+      --red: #f87171;
+      --red-dim: rgba(248,113,113,0.10);
+      --border: rgba(255,255,255,0.07);
+      --mono: 'IBM Plex Mono', 'Courier New', monospace;
+      --sans: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; }
+
+    /* ═══════════════════════════════════════════
+       NAV
+       ═══════════════════════════════════════════ */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 56px;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    nav.scrolled {
+      background: rgba(8,8,8,0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-color: var(--border);
+    }
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .nav-right { display: flex; align-items: center; gap: 20px; }
+    .nav-pip {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--fg-dim);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      padding: 5px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .nav-pip:hover { border-color: rgba(45,212,191,0.3); }
+    .nav-link {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 500;
+      color: var(--fg-dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: var(--fg); }
+    .gh-icon { width: 16px; height: 16px; }
+
+    /* ═══════════════════════════════════════════
+       HERO
+       ═══════════════════════════════════════════ */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex; align-items: center;
+      overflow: hidden;
+      padding: 80px 40px 60px;
+    }
+
+    /* Data stream background — flowing tabular data rows */
+    .data-stream {
+      position: absolute; inset: 0;
+      overflow: hidden; pointer-events: none;
+    }
+    .data-stream::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 35% 45%, transparent 0%, var(--bg) 70%);
+      z-index: 1;
+    }
+    .stream-row {
+      position: absolute;
+      white-space: nowrap;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: rgba(45,212,191,0.06);
+      animation: streamScroll linear infinite;
+      will-change: transform;
+    }
+    @keyframes streamScroll {
+      from { transform: translateX(100vw); }
+      to   { transform: translateX(-250%); }
+    }
+
+    .hero-inner {
+      position: relative; z-index: 2;
+      max-width: 1200px; width: 100%;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+
+    .hero-left {}
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 28px;
+      opacity: 0.8;
+    }
+
+    .hero-h1 {
+      font-family: var(--mono);
+      font-size: clamp(28px, 3.5vw, 52px);
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 24px;
+    }
+    .hl-red { color: var(--red); }
+    .hl-teal { color: var(--accent); }
+
+    .hero-p {
+      font-size: 16px;
+      color: var(--fg-dim);
+      line-height: 1.7;
+      max-width: 460px;
+      margin-bottom: 40px;
+    }
+
+    .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    .btn-install {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--accent);
+      color: #080808;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 12px 24px;
+      border: none; border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .btn-install:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--fg-dim);
+      font-size: 13px; font-weight: 500;
+      padding: 12px 20px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-decoration: none;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .btn-ghost:hover { color: var(--fg); border-color: rgba(255,255,255,0.18); }
+
+    /* ── Terminal window ── */
+    .terminal {
+      background: #0a0a0a;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    }
+    .terminal-bar {
+      display: flex; align-items: center; gap: 7px;
+      padding: 12px 16px;
+      background: #141414;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    .terminal-title {
+      margin-left: 12px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #555;
+    }
+    .terminal-body {
+      padding: 20px 22px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.9;
+      min-height: 320px;
+      overflow: hidden;
+    }
+    .tl { opacity: 0; transform: translateY(6px); transition: opacity 0.35s, transform 0.35s; }
+    .tl.show { opacity: 1; transform: translateY(0); }
+    .tl-cmd { color: var(--fg); }
+    .tl-cmd .prompt { color: var(--accent); opacity: 0.6; }
+    .tl-info { color: #666; }
+    .tl-info b { color: #999; font-weight: 500; }
+    .tl-warn { color: var(--red); opacity: 0.9; }
+    .tl-ok { color: var(--accent); }
+    .tl-ok b { color: var(--fg); font-weight: 500; }
+    .progress-bar {
+      display: inline-block;
+      width: 180px;
+      height: 6px;
+      background: #1a1a1a;
+      border-radius: 3px;
+      overflow: hidden;
+      vertical-align: middle;
+      margin: 0 6px;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* ═══════════════════════════════════════════
+       TICKER — scrolling batch log
+       ═══════════════════════════════════════════ */
+    .ticker {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 0;
+      overflow: hidden;
+      background: var(--bg2);
+    }
+    .ticker-track {
+      display: flex; gap: 40px;
+      width: max-content;
+      animation: tickerSlide 35s linear infinite;
+    }
+    @keyframes tickerSlide {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    .tick {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #555;
+      white-space: nowrap;
+    }
+    .tick em { color: var(--accent); font-style: normal; }
+
+    /* ═══════════════════════════════════════════
+       STATS
+       ═══════════════════════════════════════════ */
+    .stats-wrap { border-bottom: 1px solid var(--border); }
+    .stats {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      padding: 0 40px;
+    }
+    .stat {
+      padding: 48px 0;
+      border-right: 1px solid var(--border);
+      padding-right: 32px;
+      padding-left: 32px;
+    }
+    .stat:first-child { padding-left: 0; }
+    .stat:last-child { border-right: none; padding-right: 0; }
+    .stat-num {
+      font-family: var(--mono);
+      font-size: clamp(36px, 4vw, 56px);
+      font-weight: 600;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .stat-num .a { color: var(--accent); }
+    .stat-label {
+      font-size: 13px;
+      color: var(--fg-dim);
+      line-height: 1.5;
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTIONS (shared)
+       ═══════════════════════════════════════════ */
+    .sec {
+      max-width: 1200px; margin: 0 auto;
+      padding: 100px 40px;
+    }
+    .sec-full {
+      border-top: 1px solid var(--border);
+    }
+    .sec-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+    .sec-title {
+      font-size: clamp(24px, 3vw, 38px);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 14px;
+      letter-spacing: -0.02em;
+    }
+    .sec-sub {
+      font-size: 16px;
+      color: var(--fg-dim);
+      max-width: 520px;
+      line-height: 1.7;
+      margin-bottom: 56px;
+    }
+
+    /* ═══════════════════════════════════════════
+       FEATURES — spec-sheet style
+       ═══════════════════════════════════════════ */
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid var(--border);
+    }
+    .feat {
+      padding: 28px 0 28px 20px;
+      border-bottom: 1px solid var(--border);
+      border-left: 3px solid transparent;
+      transition: border-color 0.2s;
+    }
+    .feat:nth-child(even) {
+      padding-left: 48px;
+      border-left: none;
+      border-left-width: 0;
+    }
+    .feat:nth-child(odd) { padding-right: 48px; }
+    .feat:hover { border-left-color: var(--accent); }
+    .feat:nth-child(even):hover { border-left-color: transparent; }
+    .feat-name {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .feat-desc {
+      font-size: 13px;
+      color: var(--fg-dim);
+      line-height: 1.6;
+    }
+    .feat-metric {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 8px;
+    }
+
+    /* ═══════════════════════════════════════════
+       CODE — tabbed examples
+       ═══════════════════════════════════════════ */
+    .code-wrap {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .code-inner {
+      max-width: 1200px; margin: 0 auto;
+      padding: 100px 40px;
+    }
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+    .tab {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--fg-dim);
+      padding: 10px 20px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      user-select: none;
+    }
+    .tab:hover { color: var(--fg); }
+    .tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+    .panels { position: relative; }
+    .panel {
+      display: none;
+      background: #0a0a0a;
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+    }
+    .panel.on { display: block; }
+    .panel pre {
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.75;
+      padding: 28px 32px;
+      overflow-x: auto;
+      color: #bbb;
+    }
+    /* Syntax tokens */
+    .k  { color: #c792ea; } /* keyword */
+    .f  { color: #82aaff; } /* function */
+    .s  { color: #c3e88d; } /* string */
+    .n  { color: #f78c6c; } /* number */
+    .c  { color: #546e7a; font-style: italic; } /* comment */
+    .ac { color: #2dd4bf; } /* accent (Ondine class) */
+
+    /* ═══════════════════════════════════════════
+       HOW IT WORKS — 3 steps
+       ═══════════════════════════════════════════ */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .step {
+      padding: 0 40px 0 0;
+      border-right: 1px solid var(--border);
+    }
+    .step:last-child { border-right: none; padding-right: 0; }
+    .step:not(:first-child) { padding-left: 40px; }
+    .step-num {
+      font-family: var(--mono);
+      font-size: 48px;
+      font-weight: 600;
+      color: var(--accent);
+      opacity: 0.2;
+      line-height: 1;
+      margin-bottom: 20px;
+    }
+    .step-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .step-desc {
+      font-size: 14px;
+      color: var(--fg-dim);
+      line-height: 1.7;
+    }
+
+    /* ═══════════════════════════════════════════
+       INSTALL CTA
+       ═══════════════════════════════════════════ */
+    .cta-sec {
+      padding: 120px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-sec::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 500px; height: 250px;
+      background: radial-gradient(ellipse, rgba(45,212,191,0.05), transparent 70%);
+      pointer-events: none;
+    }
+    .cta-h2 {
+      font-family: var(--mono);
+      font-size: clamp(24px, 3.5vw, 44px);
+      font-weight: 600;
+      margin-bottom: 16px;
+      line-height: 1.2;
+      position: relative;
+    }
+    .cta-p {
+      font-size: 16px;
+      color: var(--fg-dim);
+      margin-bottom: 40px;
+      position: relative;
+    }
+    .cmd-box {
+      display: inline-flex; align-items: center; gap: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      padding: 16px 26px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      position: relative;
+      margin-bottom: 28px;
+    }
+    .cmd-box:hover { border-color: rgba(45,212,191,0.25); }
+    .cmd-text {
+      font-family: var(--mono);
+      font-size: 15px;
+      color: var(--fg);
+    }
+    .cmd-text .p { color: var(--accent); opacity: 0.5; }
+    .cmd-copy {
+      color: var(--fg-dim);
+      transition: color 0.2s;
+    }
+    .cmd-copy:hover { color: var(--accent); }
+    .cmd-copied {
+      position: absolute;
+      top: -28px; left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .cmd-copied.show { opacity: 1; }
+
+    .cta-links {
+      display: flex; gap: 14px;
+      justify-content: center; flex-wrap: wrap;
+      position: relative;
+    }
+
+    /* ═══════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════ */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      max-width: 1200px; margin: 0 auto;
+    }
+    .ft-logo {
+      font-family: var(--mono);
+      font-size: 15px;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .ft-links { display: flex; gap: 28px; }
+    .ft-links a {
+      font-size: 12px;
+      color: var(--fg-dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .ft-links a:hover { color: var(--fg); }
+    .ft-copy { font-size: 12px; color: #444; }
+
+    /* ═══════════════════════════════════════════
+       SCROLL FADE-IN
+       ═══════════════════════════════════════════ */
+    .fi {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .fi.vis { opacity: 1; transform: translateY(0); }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+       ═══════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      nav { padding: 0 20px; }
+      .nav-pip { display: none; }
+      .hero { padding: 100px 20px 60px; }
+      .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+      .terminal-body { min-height: 260px; font-size: 11.5px; }
+      .stats { grid-template-columns: 1fr 1fr; padding: 0 20px; }
+      .stat { padding: 32px 20px; }
+      .stat:nth-child(2) { border-right: none; }
+      .stat:nth-child(3) { padding-left: 0; }
+      .stat:nth-child(4) { border-right: none; }
+      .sec { padding: 72px 20px; }
+      .features { grid-template-columns: 1fr; }
+      .feat:nth-child(even) { padding-left: 20px; }
+      .feat:nth-child(odd) { padding-right: 0; }
+      .code-inner { padding: 72px 20px; }
+      .steps { grid-template-columns: 1fr; gap: 40px; }
+      .step { border-right: none; padding: 0; border-bottom: 1px solid var(--border); padding-bottom: 40px; }
+      .step:last-child { border-bottom: none; padding-bottom: 0; }
+      .step:not(:first-child) { padding-left: 0; padding-top: 40px; }
+      .cta-sec { padding: 80px 20px; }
+      footer { flex-direction: column; gap: 20px; text-align: center; padding: 32px 20px; }
+      .ft-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+    }
+    @media (max-width: 480px) {
+      .hero-h1 { font-size: 24px; }
+      .stat-num { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════ NAV ════════════════════ -->
+<nav id="nav">
+  <a href="/" class="nav-logo">ondine</a>
+  <div class="nav-right">
+    <span class="nav-pip" onclick="copyPip()" title="Click to copy">pip install ondine</span>
+    <a href="https://docs.ondine.dev" class="nav-link">Docs</a>
+    <a href="https://github.com/ptimizeroracle/ondine" class="nav-link" target="_blank" rel="noopener">
+      <svg class="gh-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ════════════════════ HERO ════════════════════ -->
+<section class="hero">
+  <!-- Data stream background -->
+  <div class="data-stream" id="dataStream"></div>
+
+  <div class="hero-inner">
+    <!-- Left column: text -->
+    <div class="hero-left">
+      <p class="hero-eyebrow">// llm-powered data processing engine</p>
+
+      <h1 class="hero-h1">
+        Run any LLM on<br>
+        <span class="hl-teal">every row</span> of<br>
+        your data.
+      </h1>
+
+      <p class="hero-p">
+        Ondine is a batch processing engine for tabular data.
+        Feed it a DataFrame, pick any LLM, get structured
+        columns back. Cost control, checkpointing,
+        and anti-hallucination are built in.
+      </p>
+
+      <div class="hero-ctas">
+        <a href="https://pypi.org/project/ondine/" class="btn-install">pip install ondine</a>
+        <a href="https://github.com/ptimizeroracle/ondine" class="btn-ghost" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          Star on GitHub
+        </a>
+        <a href="https://docs.ondine.dev" class="btn-ghost">Read docs →</a>
+      </div>
+    </div>
+
+    <!-- Right column: terminal animation -->
+    <div class="terminal" role="img" aria-label="Terminal showing ondine batch processing demo">
+      <div class="terminal-bar">
+        <span class="dot dot-r"></span>
+        <span class="dot dot-y"></span>
+        <span class="dot dot-g"></span>
+        <span class="terminal-title">python — ondine</span>
+      </div>
+      <div class="terminal-body" id="term">
+        <div class="tl tl-cmd"><span class="prompt">$ </span>python analyze_reviews.py</div>
+        <div class="tl tl-info">◆ Loading <b>reviews.csv</b> — 10,000 rows × 4 columns</div>
+        <div class="tl tl-info">◆ Task: classify sentiment, score 1–10, extract topic</div>
+        <div class="tl tl-info">◆ Model: <b>gpt-4o-mini</b> · Batch size: 50 rows/call</div>
+        <div class="tl tl-info">◆ Estimated cost: <b>$2.30</b></div>
+        <div class="tl tl-info">◆ Processing rows...</div>
+        <div class="tl tl-info">  <span class="progress-bar"><span class="progress-fill" id="progFill"></span></span> <span id="progPct">0%</span> — 10,000 rows</div>
+        <div class="tl tl-ok">✓ <b>Complete.</b> 3 new columns added:</div>
+        <div class="tl tl-ok">  → <b>sentiment</b> <span style="color:#666">(str)</span> positive | neutral | negative</div>
+        <div class="tl tl-ok">  → <b>score</b> <span style="color:#666">(int)</span> 1–10</div>
+        <div class="tl tl-ok">  → <b>key_topic</b> <span style="color:#666">(str)</span> free text</div>
+        <div class="tl tl-ok">✓ Saved to <b>reviews_analyzed.csv</b> · $2.28 spent</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ TICKER ════════════════════ -->
+<div class="ticker">
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<!-- ════════════════════ STATS ════════════════════ -->
+<div class="stats-wrap">
+  <div class="stats">
+    <div class="stat fi">
+      <div class="stat-num"><span class="a" data-count="100">0</span>x</div>
+      <div class="stat-label">fewer API calls<br>via multi-row batching</div>
+    </div>
+    <div class="stat fi">
+      <div class="stat-num"><span class="a" data-count="50">0</span>%</div>
+      <div class="stat-label">cost reduction<br>via prefix caching</div>
+    </div>
+    <div class="stat fi">
+      <div class="stat-num"><span class="a" data-count="99">0</span><span class="a">.9%</span></div>
+      <div class="stat-label">completion rate<br>with checkpointing</div>
+    </div>
+    <div class="stat fi">
+      <div class="stat-num"><span class="a" data-count="100">0</span>+</div>
+      <div class="stat-label">LLM providers<br>via LiteLLM</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ FEATURES ════════════════════ -->
+<div class="sec-full">
+  <div class="sec">
+    <p class="sec-label">Capabilities</p>
+    <h2 class="sec-title">Everything a production pipeline needs.</h2>
+    <p class="sec-sub">Not a toy wrapper. Ondine handles checkpointing, budget limits, structured output, and anti-hallucination out of the box.</p>
+
+    <div class="features">
+      <div class="feat fi">
+        <div class="feat-name">Multi-row batching</div>
+        <div class="feat-desc">Pack N DataFrame rows into one prompt. The LLM processes an entire batch per API call instead of one row at a time.</div>
+        <div class="feat-metric">→ 10–100x API call reduction</div>
+      </div>
+      <div class="feat fi">
+        <div class="feat-name">Prefix caching</div>
+        <div class="feat-desc">System prompt + schema cached once across all batches. You only pay for the variable row data each time.</div>
+        <div class="feat-metric">→ 40–50% token cost savings</div>
+      </div>
+      <div class="feat fi">
+        <div class="feat-name">Checkpointing</div>
+        <div class="feat-desc">Results saved after every batch. Resume interrupted jobs without reprocessing completed rows. Crash-safe by default.</div>
+        <div class="feat-metric">→ 99.9% completion rate</div>
+      </div>
+      <div class="feat fi">
+        <div class="feat-name">Budget limits</div>
+        <div class="feat-desc">Set a max spend before running. Ondine estimates cost upfront and halts when the limit is reached. No surprise invoices.</div>
+        <div class="feat-metric">→ estimate() before run()</div>
+      </div>
+      <div class="feat fi">
+        <div class="feat-name">Structured output</div>
+        <div class="feat-desc">Define a Pydantic model. Every row comes back parsed, validated, and typed. No string parsing.</div>
+        <div class="feat-metric">→ Pydantic v2 native</div>
+      </div>
+      <div class="feat fi">
+        <div class="feat-name">Context Store</div>
+        <div class="feat-desc">Anti-hallucination layer. Validates LLM outputs against known facts from your dataset before writing results.</div>
+        <div class="feat-metric">→ Grounded, verifiable outputs</div>
+      </div>
+      <div class="feat fi">
+        <div class="feat-name">100+ LLM providers</div>
+        <div class="feat-desc">GPT-4o, Claude, Gemini, Mistral, local Ollama. All through LiteLLM. Switch with one line.</div>
+        <div class="feat-metric">→ Zero vendor lock-in</div>
+      </div>
+      <div class="feat fi">
+        <div class="feat-name">Cost estimation</div>
+        <div class="feat-desc">Per-batch, per-row, and total cost breakdowns before you spend a single token.</div>
+        <div class="feat-metric">→ Full transparency</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ CODE EXAMPLES ════════════════════ -->
+<div class="code-wrap">
+  <div class="code-inner">
+    <p class="sec-label">Usage</p>
+    <h2 class="sec-title">Three lines to start.</h2>
+    <p class="sec-sub">Drop into any pandas workflow. No schemas, no infrastructure, no boilerplate.</p>
+
+    <div class="tabs" role="tablist">
+      <div class="tab on" data-t="basic" role="tab" tabindex="0">Basic</div>
+      <div class="tab" data-t="struct" role="tab" tabindex="0">Structured output</div>
+      <div class="tab" data-t="budget" role="tab" tabindex="0">Budget control</div>
+      <div class="tab" data-t="ctx" role="tab" tabindex="0">Context Store</div>
+    </div>
+
+    <div class="panels">
+      <div class="panel on" id="p-basic"><pre><span class="k">import</span> pandas <span class="k">as</span> pd
+<span class="k">from</span> ondine <span class="k">import</span> <span class="ac">Ondine</span>
+
+df = pd.<span class="f">read_csv</span>(<span class="s">"reviews.csv"</span>)  <span class="c"># 10,000 rows</span>
+
+engine = <span class="ac">Ondine</span>(
+    model=<span class="s">"gpt-4o-mini"</span>,
+    prompt=<span class="s">"Classify sentiment: positive, neutral, or negative."</span>,
+    batch_size=<span class="n">50</span>,             <span class="c"># 50 rows per API call → 200 calls, not 10,000</span>
+)
+
+results = engine.<span class="f">run</span>(df)
+<span class="f">print</span>(results[[<span class="s">"review"</span>, <span class="s">"sentiment"</span>]])</pre></div>
+
+      <div class="panel" id="p-struct"><pre><span class="k">from</span> pydantic <span class="k">import</span> BaseModel
+<span class="k">from</span> ondine <span class="k">import</span> <span class="ac">Ondine</span>
+
+<span class="k">class</span> <span class="f">ReviewAnalysis</span>(BaseModel):
+    sentiment: <span class="f">str</span>          <span class="c"># "positive" | "neutral" | "negative"</span>
+    score: <span class="f">int</span>              <span class="c"># 1–10</span>
+    key_topic: <span class="f">str</span>
+
+engine = <span class="ac">Ondine</span>(
+    model=<span class="s">"gpt-4o-mini"</span>,
+    prompt=<span class="s">"Analyze this customer review."</span>,
+    output_model=ReviewAnalysis,  <span class="c"># fully typed, validated</span>
+    batch_size=<span class="n">50</span>,
+)
+
+results = engine.<span class="f">run</span>(df)
+<span class="c"># results.sentiment, results.score, results.key_topic — all typed columns</span></pre></div>
+
+      <div class="panel" id="p-budget"><pre>engine = <span class="ac">Ondine</span>(
+    model=<span class="s">"gpt-4o"</span>,
+    prompt=<span class="s">"Summarize this support ticket."</span>,
+    batch_size=<span class="n">20</span>,
+    max_cost=<span class="n">5.00</span>,             <span class="c"># hard budget limit in USD</span>
+)
+
+<span class="c"># Always estimate first</span>
+est = engine.<span class="f">estimate</span>(df)
+<span class="f">print</span>(<span class="s">f"Estimated: $</span>{est.total_cost:.4f}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"Batches:   </span>{est.total_batches}<span class="s">"</span>)
+
+<span class="c"># Run — stops at $5.00, checkpoints progress</span>
+results = engine.<span class="f">run</span>(df, checkpoint=<span class="s">"tickets.ckpt.json"</span>)</pre></div>
+
+      <div class="panel" id="p-ctx"><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">Ondine</span>, <span class="ac">ContextStore</span>
+
+<span class="c"># Ground LLM outputs against known facts</span>
+store = <span class="ac">ContextStore</span>.<span class="f">from_dataframe</span>(
+    df,
+    key_columns=[<span class="s">"employee_id"</span>, <span class="s">"department"</span>],
+)
+
+engine = <span class="ac">Ondine</span>(
+    model=<span class="s">"gpt-4o-mini"</span>,
+    prompt=<span class="s">"Score employee performance 1–10."</span>,
+    context_store=store,          <span class="c"># validates outputs vs. known data</span>
+    batch_size=<span class="n">50</span>,
+)
+
+results = engine.<span class="f">run</span>(df)
+<span class="c"># Hallucinated scores flagged — not silently written</span></pre></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ HOW IT WORKS ════════════════════ -->
+<div class="sec-full">
+  <div class="sec">
+    <p class="sec-label">How it works</p>
+    <h2 class="sec-title">How your data flows.</h2>
+    <p class="sec-sub">DataFrame in, AI-enriched DataFrame out. Ondine handles the pipeline between.</p>
+
+    <div class="steps">
+      <div class="step fi">
+        <div class="step-num">01</div>
+        <div class="step-name">Pack rows into batches</div>
+        <div class="step-desc">Instead of 1 row per API call, Ondine packs N rows into a single prompt. The LLM sees a mini-table and returns N results at once. Batch size is tunable per use case.</div>
+      </div>
+      <div class="step fi">
+        <div class="step-num">02</div>
+        <div class="step-name">Cache the shared prefix</div>
+        <div class="step-desc">Your system prompt and output schema are sent once, then cached. Only the batch data varies between calls. This is where prefix caching cuts 40–50% of your token cost.</div>
+      </div>
+      <div class="step fi">
+        <div class="step-num">03</div>
+        <div class="step-name">Checkpoint and reassemble</div>
+        <div class="step-desc">Results are written after every batch. If a job crashes mid-run, restart picks up exactly where it stopped. Final output reassembles into your original DataFrame shape.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ INSTALL CTA ════════════════════ -->
+<section class="cta-sec">
+  <p class="sec-label" style="text-align:center">Get started</p>
+  <h2 class="cta-h2">One command.<br>LLM-powered data processing.</h2>
+  <p class="cta-p">Works with pandas, any LLM provider, and your existing data workflow.</p>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+    <div class="cmd-box" id="cmdBox" onclick="copyCmd()">
+      <span class="cmd-text"><span class="p">$</span> pip install ondine</span>
+      <svg class="cmd-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      <span class="cmd-copied" id="cmdCopied">copied!</span>
+    </div>
+    <div class="cta-links">
+      <a href="https://docs.ondine.dev" class="btn-ghost">Read the docs →</a>
+      <a href="https://github.com/ptimizeroracle/ondine" class="btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        Star on GitHub
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ FOOTER ════════════════════ -->
+<footer>
+  <a href="/" class="ft-logo">ondine</a>
+  <div class="ft-links">
+    <a href="https://github.com/ptimizeroracle/ondine" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://docs.ondine.dev">Docs</a>
+    <a href="https://pypi.org/project/ondine/">PyPI</a>
+    <a href="https://docs.ondine.dev/changelog">Changelog</a>
+  </div>
+  <span class="ft-copy">Open source · MIT license</span>
+</footer>
+
+<!-- ════════════════════ SCRIPTS ════════════════════ -->
+<script>
+/* ── DATA STREAM BACKGROUND ── */
+(function(){
+  var c = document.getElementById('dataStream');
+  var rows = [
+    'id:1042 | dept:Engineering | review:"Consistently delivers..." | score:8 | tenure:4.2y',
+    'id:1043 | dept:Sales       | review:"Exceeds targets..."      | score:9 | tenure:2.1y',
+    'id:1044 | dept:Product     | review:"Cross-functional lead..." | score:7 | tenure:5.8y',
+    'id:1045 | dept:Support     | review:"Fast escalations..."     | score:8 | tenure:1.3y',
+    'id:1046 | dept:Engineering | review:"Architect-level..."      | score:9 | tenure:7.1y',
+    'id:1047 | dept:Marketing   | review:"Strong campaigns..."     | score:7 | tenure:3.4y',
+    'id:1048 | dept:Finance     | review:"Accurate forecasting..." | score:8 | tenure:6.0y',
+    'id:1049 | dept:HR          | review:"Improved retention..."   | score:8 | tenure:2.9y',
+  ];
+  for (var i = 0; i < 14; i++) {
+    var el = document.createElement('div');
+    el.className = 'stream-row';
+    el.style.top = (4 + i * 7) + '%';
+    var dur = 28 + Math.random() * 25;
+    el.style.animationDuration = dur + 's';
+    el.style.animationDelay = -(Math.random() * dur) + 's';
+    el.textContent = '│ ' + rows[i % rows.length] + ' │';
+    c.appendChild(el);
+  }
+})();
+
+/* ── TERMINAL ANIMATION ── */
+(function(){
+  var lines = document.querySelectorAll('#term .tl');
+  var fill = document.getElementById('progFill');
+  var pct = document.getElementById('progPct');
+  var delays = [300, 800, 1400, 2000, 2600, 3200, 3800, 6200, 6800, 7200, 7600, 8200];
+
+  function runTerminal() {
+    // Reset
+    for (var i = 0; i < lines.length; i++) lines[i].classList.remove('show');
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+    pct.textContent = '0%';
+
+    // Show lines with delays
+    for (var j = 0; j < lines.length; j++) {
+      (function(idx, delay) {
+        setTimeout(function() {
+          lines[idx].classList.add('show');
+          // Progress bar animation on line 6 (index 6)
+          if (idx === 6) {
+            setTimeout(function() {
+              fill.style.transition = 'width 2s cubic-bezier(0.22,1,0.36,1)';
+              fill.style.width = '100%';
+              // Animate percentage text
+              var start = performance.now();
+              function tick(now) {
+                var p = Math.min((now - start) / 2000, 1);
+                pct.textContent = Math.round(p * 100) + '%';
+                if (p < 1) requestAnimationFrame(tick);
+              }
+              requestAnimationFrame(tick);
+            }, 50);
+          }
+        }, delay);
+      })(j, delays[j]);
+    }
+  }
+
+  // First run after small delay
+  setTimeout(runTerminal, 600);
+  // Loop
+  setInterval(runTerminal, 14000);
+})();
+
+/* ── TICKER ── */
+(function(){
+  var items = [
+    'BATCH_001=<em>50 rows</em> [DONE]',
+    'BATCH_002=<em>50 rows</em> [DONE]',
+    'cost_so_far=<em>$0.47</em>',
+    'BATCH_003=<em>50 rows</em> [DONE]',
+    'completion=<em>62%</em>',
+    'cache_hits=<em>98.2%</em>',
+    'BATCH_004=<em>50 rows</em> [RUNNING]',
+    'api_calls_saved=<em>6,300</em>',
+    'tokens_cached=<em>1.2M</em>',
+    'errors=<em>0</em>',
+    'BATCH_005=<em>50 rows</em> [DONE]',
+    'avg_latency=<em>340ms</em>',
+  ];
+  var track = document.getElementById('tickerTrack');
+  var all = items.concat(items); // double for seamless loop
+  for (var i = 0; i < all.length; i++) {
+    var el = document.createElement('span');
+    el.className = 'tick';
+    el.innerHTML = all[i];
+    track.appendChild(el);
+  }
+})();
+
+/* ── NAV SCROLL ── */
+var nav = document.getElementById('nav');
+var scrolled = false;
+window.addEventListener('scroll', function() {
+  var s = window.scrollY > 40;
+  if (s !== scrolled) {
+    scrolled = s;
+    nav.classList.toggle('scrolled', s);
+  }
+}, { passive: true });
+
+/* ── COUNTER ANIMATION ── */
+function animCount(el) {
+  var target = parseInt(el.getAttribute('data-count'));
+  if (!target) return;
+  var dur = 1400;
+  var start = performance.now();
+  function tick(now) {
+    var t = Math.min((now - start) / dur, 1);
+    var ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(ease * target);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ── INTERSECTION OBSERVER — fade-in + counters ── */
+var obs = new IntersectionObserver(function(entries) {
+  for (var i = 0; i < entries.length; i++) {
+    if (entries[i].isIntersecting) {
+      entries[i].target.classList.add('vis');
+      // Check for counter inside
+      var counters = entries[i].target.querySelectorAll('[data-count]');
+      for (var j = 0; j < counters.length; j++) {
+        if (!counters[j].dataset.done) {
+          counters[j].dataset.done = '1';
+          animCount(counters[j]);
+        }
+      }
+      obs.unobserve(entries[i].target);
+    }
+  }
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.fi').forEach(function(el) { obs.observe(el); });
+
+/* ── CODE TABS ── */
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    var id = this.getAttribute('data-t');
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('on'); });
+    document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('on'); });
+    this.classList.add('on');
+    document.getElementById('p-' + id).classList.add('on');
+  });
+});
+
+/* ── COPY COMMANDS ── */
+function copyPip() {
+  navigator.clipboard.writeText('pip install ondine');
+}
+function copyCmd() {
+  navigator.clipboard.writeText('pip install ondine').then(function() {
+    var el = document.getElementById('cmdCopied');
+    el.classList.add('show');
+    document.getElementById('cmdBox').style.borderColor = 'rgba(45,212,191,0.3)';
+    setTimeout(function() {
+      el.classList.remove('show');
+      document.getElementById('cmdBox').style.borderColor = '';
+    }, 1500);
+  });
+}
+</script>
+</body>
+</html>
