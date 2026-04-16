@@ -738,7 +738,7 @@
         <div class="tl tl-cmd"><span class="prompt">$ </span>python analyze_reviews.py</div>
         <div class="tl tl-info">◆ Loading <b>reviews.csv</b> — 10,000 rows × 4 columns</div>
         <div class="tl tl-info">◆ Task: classify sentiment, score 1–10, extract topic</div>
-        <div class="tl tl-info">◆ Model: <b>gpt-4o-mini</b> · Batch size: 50 rows/call</div>
+        <div class="tl tl-info">◆ Model: <b>gpt-5.4-mini</b> · Batch size: 50 rows/call</div>
         <div class="tl tl-info">◆ Estimated cost: <b>$2.30</b></div>
         <div class="tl tl-info">◆ Processing rows...</div>
         <div class="tl tl-info">  <span class="progress-bar"><span class="progress-fill" id="progFill"></span></span> <span id="progPct">0%</span> — 10,000 rows</div>
@@ -819,7 +819,7 @@
       </div>
       <div class="feat fi">
         <div class="feat-name">100+ LLM providers</div>
-        <div class="feat-desc">GPT-4o, Claude, Gemini, Mistral, local Ollama. All through LiteLLM. Switch with one line.</div>
+        <div class="feat-desc">GPT-5.4, Claude, Gemini, Mistral, local Ollama. All through LiteLLM. Switch with one line.</div>
         <div class="feat-metric">→ Zero vendor lock-in</div>
       </div>
       <div class="feat fi">
@@ -852,7 +852,7 @@
 df = pl.<span class="f">read_csv</span>(<span class="s">"reviews.csv"</span>)  <span class="c"># 10,000 rows — pandas works too</span>
 
 engine = <span class="ac">Ondine</span>(
-    model=<span class="s">"gpt-4o-mini"</span>,
+    model=<span class="s">"gpt-5.4-mini"</span>,
     prompt=<span class="s">"Classify sentiment: positive, neutral, or negative."</span>,
     batch_size=<span class="n">50</span>,             <span class="c"># 50 rows per API call → 200 calls, not 10,000</span>
 )
@@ -869,7 +869,7 @@ results = engine.<span class="f">run</span>(df)
     key_topic: <span class="f">str</span>
 
 engine = <span class="ac">Ondine</span>(
-    model=<span class="s">"gpt-4o-mini"</span>,
+    model=<span class="s">"gpt-5.4-mini"</span>,
     prompt=<span class="s">"Analyze this customer review."</span>,
     output_model=ReviewAnalysis,  <span class="c"># fully typed, validated</span>
     batch_size=<span class="n">50</span>,
@@ -879,7 +879,7 @@ results = engine.<span class="f">run</span>(df)
 <span class="c"># results.sentiment, results.score, results.key_topic — all typed columns</span></pre></div>
 
       <div class="panel" id="p-budget"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre>engine = <span class="ac">Ondine</span>(
-    model=<span class="s">"gpt-4o"</span>,
+    model=<span class="s">"gpt-5.4"</span>,
     prompt=<span class="s">"Summarize this support ticket."</span>,
     batch_size=<span class="n">20</span>,
     max_cost=<span class="n">5.00</span>,             <span class="c"># hard budget limit in USD</span>
@@ -902,7 +902,7 @@ store = <span class="ac">ContextStore</span>.<span class="f">from_dataframe</spa
 )
 
 engine = <span class="ac">Ondine</span>(
-    model=<span class="s">"gpt-4o-mini"</span>,
+    model=<span class="s">"gpt-5.4-mini"</span>,
     prompt=<span class="s">"Score employee performance 1–10."</span>,
     context_store=store,          <span class="c"># validates outputs vs. known data</span>
     batch_size=<span class="n">50</span>,
