@@ -42,12 +42,19 @@
       inset: 0;
       pointer-events: none;
       z-index: 0;
-      background: radial-gradient(
-        600px circle at var(--mx, 50%) var(--my, 50%),
-        rgba(45,212,191,0.055) 0%,
-        transparent 70%
-      );
-      transition: opacity 0.4s ease;
+      background:
+        radial-gradient(
+          700px circle at var(--mx, 50%) var(--my, 50%),
+          rgba(45,212,191,0.15) 0%,
+          rgba(45,212,191,0.06) 30%,
+          transparent 70%
+        ),
+        radial-gradient(
+          400px circle at var(--mx, 50%) var(--my, 50%),
+          rgba(45,212,191,0.08) 0%,
+          transparent 50%
+        );
+      transition: opacity 0.5s ease;
       opacity: 0;
     }
     body.mouse-active #mouse-glow { opacity: 1; }
