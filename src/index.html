@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ondine — Run LLMs on Your Entire Dataset</title>
-  <meta name="description" content="Open-source data processing engine. Run any LLM on every row of your DataFrame. Structured output, cost control, checkpointing. Built for data teams." />
+  <meta name="description" content="Open-source data processing engine. Run any LLM on every row of your pandas or Polars DataFrame. Structured output, cost control, checkpointing. Built for data teams." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -691,8 +691,8 @@
 
       <p class="hero-p">
         Ondine is a batch processing engine for tabular data.
-        Feed it a DataFrame, pick any LLM, get structured
-        columns back. Cost control, checkpointing,
+        Feed it a pandas or Polars DataFrame, pick any LLM,
+        get structured columns back. Cost control, checkpointing,
         and anti-hallucination are built in.
       </p>
 
@@ -816,7 +816,7 @@
   <div class="code-inner">
     <p class="sec-label">Usage</p>
     <h2 class="sec-title">Three lines to start.</h2>
-    <p class="sec-sub">Drop into any pandas workflow. No schemas, no infrastructure, no boilerplate.</p>
+    <p class="sec-sub">Drop into any pandas or Polars workflow. No schemas, no infrastructure, no boilerplate.</p>
 
     <div class="tabs" role="tablist">
       <div class="tab on" data-t="basic" role="tab" tabindex="0">Basic</div>
@@ -826,10 +826,10 @@
     </div>
 
     <div class="panels">
-      <div class="panel on" id="p-basic"><pre><span class="k">import</span> pandas <span class="k">as</span> pd
+      <div class="panel on" id="p-basic"><pre><span class="k">import</span> polars <span class="k">as</span> pl  <span class="c"># or: import pandas as pd</span>
 <span class="k">from</span> ondine <span class="k">import</span> <span class="ac">Ondine</span>
 
-df = pd.<span class="f">read_csv</span>(<span class="s">"reviews.csv"</span>)  <span class="c"># 10,000 rows</span>
+df = pl.<span class="f">read_csv</span>(<span class="s">"reviews.csv"</span>)  <span class="c"># 10,000 rows — pandas works too</span>
 
 engine = <span class="ac">Ondine</span>(
     model=<span class="s">"gpt-4o-mini"</span>,
@@ -899,7 +899,7 @@ results = engine.<span class="f">run</span>(df)
   <div class="sec">
     <p class="sec-label">How it works</p>
     <h2 class="sec-title">How your data flows.</h2>
-    <p class="sec-sub">DataFrame in, AI-enriched DataFrame out. Ondine handles the pipeline between.</p>
+    <p class="sec-sub">pandas or Polars DataFrame in, AI-enriched DataFrame out. Ondine handles the pipeline between.</p>
 
     <div class="steps">
       <div class="step fi">
@@ -925,7 +925,7 @@ results = engine.<span class="f">run</span>(df)
 <section class="cta-sec">
   <p class="sec-label" style="text-align:center">Get started</p>
   <h2 class="cta-h2">One command.<br>LLM-powered data processing.</h2>
-  <p class="cta-p">Works with pandas, any LLM provider, and your existing data workflow.</p>
+  <p class="cta-p">Works with pandas and Polars, any LLM provider, and your existing data workflow.</p>
 
   <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
     <div class="cmd-box" id="cmdBox" onclick="copyCmd()">
