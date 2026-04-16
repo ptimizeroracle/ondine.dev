@@ -36,28 +36,55 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Mouse spotlight ── */
-    #mouse-glow {
+    /* ── Floating numbers canvas ── */
+    #bg-canvas {
       position: fixed;
       inset: 0;
       pointer-events: none;
       z-index: 0;
-      background:
-        radial-gradient(
-          700px circle at var(--mx, 50%) var(--my, 50%),
-          rgba(45,212,191,0.15) 0%,
-          rgba(45,212,191,0.06) 30%,
-          transparent 70%
-        ),
-        radial-gradient(
-          400px circle at var(--mx, 50%) var(--my, 50%),
-          rgba(45,212,191,0.08) 0%,
-          transparent 50%
-        );
-      transition: opacity 0.5s ease;
-      opacity: 0;
     }
-    body.mouse-active #mouse-glow { opacity: 1; }
+
+    /* Ensure all content sections paint above the canvas */
+    nav, .hero, .ticker, .stats-wrap, .sec-full, .code-wrap, .cta-sec, footer {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Light mode ── */
+    html.light {
+      --bg: #f5f5f0;
+      --bg2: #eaeae5;
+      --fg: #1a1a1a;
+      --fg-dim: #666;
+      --accent: #0d9488;
+      --accent-dim: rgba(13,148,136,0.10);
+      --red: #dc2626;
+      --red-dim: rgba(220,38,38,0.10);
+      --border: rgba(0,0,0,0.08);
+    }
+    html.light nav.scrolled {
+      background: rgba(245,245,240,0.92);
+    }
+    html.light .terminal {
+      background: #1a1a1a;
+      color: #e8e8e8;
+    }
+    html.light .terminal-bar {
+      background: #252525;
+    }
+    html.light .stream-row {
+      color: rgba(13,148,136,0.06);
+    }
+
+    /* ── Theme toggle ── */
+    .theme-toggle {
+      background: none; border: 1px solid var(--border);
+      border-radius: 4px; padding: 5px 8px; cursor: pointer;
+      color: var(--fg-dim); font-size: 14px; line-height: 1;
+      transition: border-color 0.2s, color 0.2s;
+      display: flex; align-items: center;
+    }
+    .theme-toggle:hover { border-color: rgba(45,212,191,0.3); color: var(--fg); }
 
     a { color: inherit; }
 
@@ -635,6 +662,7 @@
   <a href="/" class="nav-logo">ondine</a>
   <div class="nav-right">
     <span class="nav-pip" onclick="copyPip()" title="Click to copy">pip install ondine</span>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark" aria-label="Toggle theme">☀</button>
     <a href="https://docs.ondine.dev" class="nav-link">Docs</a>
     <a href="https://github.com/ptimizeroracle/ondine" class="nav-link" target="_blank" rel="noopener">
       <svg class="gh-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
@@ -643,7 +671,7 @@
   </div>
 </nav>
 
-<div id="mouse-glow" aria-hidden="true"></div>
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
 
 <!-- ════════════════════ HERO ════════════════════ -->
 <section class="hero">
@@ -1025,33 +1053,120 @@ results = engine.<span class="f">run</span>(df)
   }
 })();
 
+/* ── THEME TOGGLE ── */
+function toggleTheme() {
+  var isLight = document.documentElement.classList.toggle('light');
+  document.querySelector('.theme-toggle').textContent = isLight ? '☾' : '☀';
+  localStorage.setItem('ondine-theme', isLight ? 'light' : 'dark');
+  // Update canvas particle color
+  if (window._bgParticleColor) {
+    window._bgParticleColor = isLight ? '13,148,136' : '45,212,191';
+    window._bgBg = isLight ? '245,245,240' : '8,8,8';
+  }
+}
+// Restore saved preference
+(function() {
+  var saved = localStorage.getItem('ondine-theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    document.querySelector('.theme-toggle').textContent = '☾';
+  }
+})();
+
+/* ── FLOATING NUMBERS BACKGROUND ── */
+(function() {
+  var canvas = document.getElementById('bg-canvas');
+  var ctx = canvas.getContext('2d');
+  var mx = window.innerWidth / 2, my = window.innerHeight / 2;
+  var MOUSE_RADIUS = 200;
+  var items = [];
+  var COUNT = 140;
+
+  window._bgParticleColor = document.documentElement.classList.contains('light') ? '13,148,136' : '45,212,191';
+  window._bgBg = document.documentElement.classList.contains('light') ? '245,245,240' : '8,8,8';
+
+  var dataValues = [
+    '0.91','0.87','0.42','1.00','0.03','0.78','0.55','0.33','0.96','0.12',
+    'pos','neg','neu','P1','P2','P3',
+    '128','256','512','1024','2048',
+    '$0.02','$0.15','$1.30','$0.004',
+    '\u2713','\u2717','\u2192','\u25C6','\u25CF',
+    'int','str','float','bool',
+    'gpt','claude','llama','row','col','df'
+  ];
+
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  window.addEventListener('mousemove', function(e) { mx = e.clientX; my = e.clientY; });
+
+  for (var i = 0; i < COUNT; i++) {
+    items.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: -0.1 - Math.random() * 0.3,
+      text: dataValues[Math.floor(Math.random() * dataValues.length)],
+      size: 9 + Math.random() * 5,
+      alpha: 0.04 + Math.random() * 0.08,
+      rotation: (Math.random() - 0.5) * 0.3
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    var col = window._bgParticleColor;
+
+    for (var i = 0; i < COUNT; i++) {
+      var p = items[i];
+      p.x += p.vx;
+      p.y += p.vy;
+
+      var dx = mx - p.x, dy = my - p.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Mouse gravity well
+      if (dist < MOUSE_RADIUS && dist > 30) {
+        var force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 0.015;
+        p.vx += dx / dist * force;
+        p.vy += dy / dist * force;
+      }
+      // Orbit — tangential force
+      if (dist < MOUSE_RADIUS * 0.6 && dist > 30) {
+        p.vx += (-dy / dist) * 0.008;
+        p.vy += (dx / dist) * 0.008;
+      }
+
+      p.vx *= 0.995;
+      p.vy *= 0.995;
+
+      // Reset off-screen
+      if (p.y < -30) { p.y = canvas.height + 20; p.x = Math.random() * canvas.width; }
+      if (p.x < -30) p.x = canvas.width + 30;
+      if (p.x > canvas.width + 30) p.x = -30;
+      if (p.y > canvas.height + 30) { p.y = -20; p.x = Math.random() * canvas.width; }
+
+      var proxAlpha = p.alpha;
+      if (dist < MOUSE_RADIUS) {
+        proxAlpha = p.alpha + (1 - dist / MOUSE_RADIUS) * 0.5;
+      }
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.font = p.size + 'px "IBM Plex Mono", "Courier New", monospace';
+      ctx.fillStyle = 'rgba(' + col + ',' + Math.min(proxAlpha, 0.7) + ')';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.text, 0, 0);
+      ctx.restore();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
 /* ── NAV SCROLL ── */
 var nav = document.getElementById('nav');
-// ── Mouse spotlight ──
-(function() {
-  var glow = document.getElementById('mouse-glow');
-  var cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-  var tx = cx, ty = cy;
-  var active = false;
-
-  window.addEventListener('mousemove', function(e) {
-    tx = e.clientX; ty = e.clientY;
-    if (!active) { active = true; document.body.classList.add('mouse-active'); }
-  });
-
-  window.addEventListener('mouseleave', function() {
-    document.body.classList.remove('mouse-active');
-    active = false;
-  });
-
-  (function loop() {
-    cx += (tx - cx) * 0.08;
-    cy += (ty - cy) * 0.08;
-    glow.style.setProperty('--mx', cx.toFixed(1) + 'px');
-    glow.style.setProperty('--my', cy.toFixed(1) + 'px');
-    requestAnimationFrame(loop);
-  })();
-})();
 
 var scrolled = false;
 window.addEventListener('scroll', function() {
