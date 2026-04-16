@@ -36,6 +36,22 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    /* ── Mouse spotlight ── */
+    #mouse-glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background: radial-gradient(
+        600px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(45,212,191,0.055) 0%,
+        transparent 70%
+      );
+      transition: opacity 0.4s ease;
+      opacity: 0;
+    }
+    body.mouse-active #mouse-glow { opacity: 1; }
+
     a { color: inherit; }
 
     /* ═══════════════════════════════════════════
@@ -620,6 +636,8 @@
   </div>
 </nav>
 
+<div id="mouse-glow" aria-hidden="true"></div>
+
 <!-- ════════════════════ HERO ════════════════════ -->
 <section class="hero">
   <!-- Data stream background -->
@@ -1002,6 +1020,32 @@ results = engine.<span class="f">run</span>(df)
 
 /* ── NAV SCROLL ── */
 var nav = document.getElementById('nav');
+// ── Mouse spotlight ──
+(function() {
+  var glow = document.getElementById('mouse-glow');
+  var cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  var tx = cx, ty = cy;
+  var active = false;
+
+  window.addEventListener('mousemove', function(e) {
+    tx = e.clientX; ty = e.clientY;
+    if (!active) { active = true; document.body.classList.add('mouse-active'); }
+  });
+
+  window.addEventListener('mouseleave', function() {
+    document.body.classList.remove('mouse-active');
+    active = false;
+  });
+
+  (function loop() {
+    cx += (tx - cx) * 0.08;
+    cy += (ty - cy) * 0.08;
+    glow.style.setProperty('--mx', cx.toFixed(1) + 'px');
+    glow.style.setProperty('--my', cy.toFixed(1) + 'px');
+    requestAnimationFrame(loop);
+  })();
+})();
+
 var scrolled = false;
 window.addEventListener('scroll', function() {
   var s = window.scrollY > 40;
