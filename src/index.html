@@ -147,30 +147,8 @@
       padding: 80px 40px 60px;
     }
 
-    /* Data stream background — flowing tabular data rows */
-    .data-stream {
-      position: absolute; inset: 0;
-      overflow: hidden; pointer-events: none;
-    }
-    .data-stream::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse 70% 60% at 35% 45%, transparent 0%, var(--bg) 70%);
-      z-index: 1;
-    }
-    .stream-row {
-      position: absolute;
-      white-space: nowrap;
-      font-family: var(--mono);
-      font-size: 11px;
-      color: rgba(45,212,191,0.06);
-      animation: streamScroll linear infinite;
-      will-change: transform;
-    }
-    @keyframes streamScroll {
-      from { transform: translateX(100vw); }
-      to   { transform: translateX(-250%); }
-    }
+    /* Legacy data stream — removed, canvas handles background now */
+    .data-stream { display: none; }
 
     .hero-inner {
       position: relative; z-index: 2;
@@ -1100,7 +1078,7 @@ function toggleTheme() {
   var mx = window.innerWidth / 2, my = window.innerHeight / 2;
   var MOUSE_RADIUS = 200;
   var items = [];
-  var COUNT = 140;
+  var COUNT = 180;
 
   window._bgParticleColor = document.documentElement.classList.contains('light') ? '13,148,136' : '45,212,191';
   window._bgBg = document.documentElement.classList.contains('light') ? '245,245,240' : '8,8,8';
@@ -1127,8 +1105,8 @@ function toggleTheme() {
       vx: (Math.random() - 0.5) * 0.3,
       vy: -0.1 - Math.random() * 0.3,
       text: dataValues[Math.floor(Math.random() * dataValues.length)],
-      size: 9 + Math.random() * 5,
-      alpha: 0.04 + Math.random() * 0.08,
+      size: 12 + Math.random() * 7,
+      alpha: 0.18 + Math.random() * 0.20,
       rotation: (Math.random() - 0.5) * 0.3
     });
   }
@@ -1175,7 +1153,7 @@ function toggleTheme() {
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rotation);
       ctx.font = p.size + 'px "IBM Plex Mono", "Courier New", monospace';
-      ctx.fillStyle = 'rgba(' + col + ',' + Math.min(proxAlpha, 0.7) + ')';
+      ctx.fillStyle = 'rgba(' + col + ',' + Math.min(proxAlpha, 0.85) + ')';
       ctx.textAlign = 'center';
       ctx.fillText(p.text, 0, 0);
       ctx.restore();
