@@ -1090,7 +1090,7 @@ function toggleTheme() {
     '$0.02','$0.15','$1.30','$0.004',
     '\u2713','\u2717','\u2192','\u25C6','\u25CF',
     'int','str','float','bool',
-    'gpt','claude','llama','row','col','df'
+    'gpt','claude','llama','qwen','grok','kimi','glm','minimax','gemini','mistral','row','col','df'
   ];
 
   function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -1105,8 +1105,8 @@ function toggleTheme() {
       vx: (Math.random() - 0.5) * 0.3,
       vy: -0.1 - Math.random() * 0.3,
       text: dataValues[Math.floor(Math.random() * dataValues.length)],
-      size: 12 + Math.random() * 7,
-      alpha: 0.18 + Math.random() * 0.20,
+      size: 11 + Math.random() * 5,
+      alpha: 0.11 + Math.random() * 0.14,
       rotation: (Math.random() - 0.5) * 0.3
     });
   }
@@ -1153,7 +1153,7 @@ function toggleTheme() {
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rotation);
       ctx.font = p.size + 'px "IBM Plex Mono", "Courier New", monospace';
-      ctx.fillStyle = 'rgba(' + col + ',' + Math.min(proxAlpha, 0.85) + ')';
+      ctx.fillStyle = 'rgba(' + col + ',' + Math.min(proxAlpha, 0.6) + ')';
       ctx.textAlign = 'center';
       ctx.fillText(p.text, 0, 0);
       ctx.restore();
