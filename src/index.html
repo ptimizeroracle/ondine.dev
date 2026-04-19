@@ -252,22 +252,22 @@
       min-height: 320px;
       overflow: hidden;
     }
-    .tl { opacity: 1; }
-    .tl-reveal { opacity: 0; transform: translateY(6px); transition: opacity 0.35s, transform 0.35s; }
-    .tl-reveal.show { opacity: 1; transform: translateY(0); }
-    .tl-cmd { color: var(--fg); }
-    .tl-cmd .prompt { color: var(--accent); opacity: 0.6; }
-    .tl-info { color: #666; }
-    .tl-info b { color: #999; font-weight: 500; }
+    .tl { opacity: 0; transform: translateY(4px); transition: opacity 0.3s ease-out, transform 0.3s ease-out; }
+    .tl.show { opacity: 1; transform: translateY(0); }
+    /* Terminal always renders on dark bg — pin colours so light-mode page doesn't invert them */
+    .tl-cmd { color: #e6e6e6; }
+    .tl-cmd .prompt { color: var(--accent); opacity: 0.7; }
+    .tl-info { color: #888; }
+    .tl-info b { color: #e0e0e0; font-weight: 500; }
     .tl-warn { color: var(--red); opacity: 0.9; }
     .tl-ok { color: var(--accent); }
-    .tl-ok b { color: var(--fg); font-weight: 500; }
+    .tl-ok b { color: #ffffff; font-weight: 500; }
     .progress-bar {
       display: inline-block;
       width: 160px;
-      height: 8px;
-      background: #222;
-      border: 1px solid #333;
+      height: 10px;
+      background: #0a0a0a;
+      border: 1px solid #2a2a2a;
       border-radius: 2px;
       overflow: hidden;
       vertical-align: middle;
@@ -275,11 +275,93 @@
       position: relative;
     }
     .progress-fill {
+      display: block;
       height: 100%;
       width: 0%;
-      background: var(--accent);
-      box-shadow: 0 0 6px rgba(62, 215, 178, 0.5);
+      background-color: #5ee8c8;
+      box-shadow: 0 0 10px #5ee8c8, inset 0 0 4px rgba(255, 255, 255, 0.3);
       transition: width 2s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .progress-fill::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        transparent 100%);
+      animation: progressSweep 1.4s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes progressSweep {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* Pipeline Report card (inside terminal) */
+    .report {
+      margin-top: 14px;
+      border: 1px solid rgba(62, 215, 178, 0.35);
+      border-radius: 3px;
+      padding: 12px 14px;
+      background: rgba(62, 215, 178, 0.03);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.35s ease-out, transform 0.35s ease-out;
+    }
+    .report.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .report-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(62, 215, 178, 0.2);
+      margin-bottom: 10px;
+    }
+    .report-title {
+      color: #ffffff;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .report-badge {
+      color: var(--accent);
+      background: rgba(62, 215, 178, 0.12);
+      border: 1px solid rgba(62, 215, 178, 0.4);
+      padding: 2px 8px;
+      border-radius: 2px;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+    .report-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      column-gap: 20px;
+      row-gap: 4px;
+    }
+    .report-k {
+      color: #888;
+    }
+    .report-v {
+      color: #ffffff;
+      text-align: right;
+    }
+    .report-dim {
+      color: #666;
+      font-weight: 400;
+    }
+    .report-divider {
+      height: 1px;
+      background: rgba(62, 215, 178, 0.2);
+      margin: 10px 0;
     }
 
     /* ═══════════════════════════════════════════
@@ -581,6 +663,67 @@
     }
 
     /* ═══════════════════════════════════════════
+       TCARD — transform gallery (use case chips)
+       ═══════════════════════════════════════════ */
+    .tcard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 36px;
+    }
+    .tcard {
+      background: var(--bg);
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: background-color 0.2s;
+    }
+    .tcard:hover { background: var(--bg2); }
+    .tcard-name {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--fg);
+      letter-spacing: 0.02em;
+    }
+    .tcard-sig {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--fg-dim);
+      line-height: 1.5;
+    }
+    .tcard-in {
+      color: var(--accent);
+      opacity: 0.85;
+    }
+    .tcard-out {
+      color: var(--accent);
+    }
+    .tcard-ex {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--fg-dim);
+      opacity: 0.75;
+      background: var(--bg2);
+      padding: 6px 8px;
+      border-left: 2px solid var(--accent);
+      border-radius: 0 2px 2px 0;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    @media (max-width: 980px) {
+      .tcard-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .tcard-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ═══════════════════════════════════════════
        INSTALL CTA
        ═══════════════════════════════════════════ */
     .cta-sec {
@@ -785,19 +928,28 @@
       </div>
       <div class="terminal-body" id="term">
         <div class="tl tl-cmd"><span class="prompt">$ </span>python enrich_reviews.py</div>
-        <div class="tl tl-info">INFO  Pipeline started · session=<b>7d3a2f8e</b> · <b>10,000</b> rows</div>
-        <div class="tl tl-info">INFO  Stage: LLMInvocation · <b>gpt-5.4-mini</b> · batch=50</div>
-        <div class="tl tl-info">INFO  Pre-run estimate: <b>$2.30</b>  ·  budget cap: <b>$5.00</b></div>
-        <div class="tl tl-info">LLMInvocation <span class="progress-bar"><span class="progress-fill" id="progFill"></span></span> <span id="progPct">0%</span> · 50 rows/s · <span id="progCost">$0.00</span></div>
-        <div class="tl tl-info">INFO  Checkpoint saved at row 10,000</div>
-        <div class="tl tl-ok">┌───────────────────────────────────────┐</div>
-        <div class="tl tl-ok">│            <b>Pipeline Report</b>            │</div>
-        <div class="tl tl-ok">├───────────────────────────────────────┤</div>
-        <div class="tl tl-ok">│ Status     : <b>COMPLETE</b>                 │</div>
-        <div class="tl tl-ok">│ Rows out   : <b>10,000</b>  ·  calls : <b>200</b>   │</div>
-        <div class="tl tl-ok">│ Duration   : <b>3m 18s</b>  (50.5 rows/sec)  │</div>
-        <div class="tl tl-ok">│ Total cost : <b>$2.2841</b> ($0.000228/row)  │</div>
-        <div class="tl tl-ok">└───────────────────────────────────────┘</div>
+        <div class="tl tl-info">[info] Pipeline execution started (session: <b>4d2ea4ba</b>)</div>
+        <div class="tl tl-info">[info] Loaded <b>10,000</b> rows from dataframe</div>
+        <div class="tl tl-info">[info] Batch aggregation: <b>50 rows per API call</b></div>
+        <div class="tl tl-info">[info] Starting stage: LLMInvocation: 10,000 rows</div>
+        <div class="tl tl-info">[progress] LLMInvocation <span class="progress-bar"><span class="progress-fill" id="progFill"></span></span> <span id="progPct">0%</span> · <span id="progCost">$0.00</span></div>
+        <div class="tl tl-info">[info] Completed LLMInvocation · <b>3m 18s</b> · <b>50 rows/s</b></div>
+
+        <div class="report">
+          <div class="report-head">
+            <span class="report-title">Pipeline Report</span>
+            <span class="report-badge">COMPLETE</span>
+          </div>
+          <div class="report-grid">
+            <span class="report-k">Output rows</span><span class="report-v">10,000</span>
+            <span class="report-k">LLM calls</span><span class="report-v">200</span>
+            <span class="report-k">Duration</span><span class="report-v">3m 18s <span class="report-dim">· 50.5 rows/sec</span></span>
+          </div>
+          <div class="report-divider"></div>
+          <div class="report-grid">
+            <span class="report-k">Total cost</span><span class="report-v">$2.2841 <span class="report-dim">· $0.000228/row</span></span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1026,23 +1178,48 @@ result = pipeline.<span class="f">execute</span>()
   <div class="sec">
     <p class="sec-label">What "a prompt is a column" unlocks</p>
     <h2 class="sec-title">Same primitive. Any transform.</h2>
-    <p class="sec-sub">The use case lives in the prompt. Ondine doesn't care what you're computing. Same `Prompt(columns) → new_columns` every time.</p>
+    <p class="sec-sub">The use case lives in the prompt. Ondine doesn't care what you're computing. `Prompt(columns) → new_columns` covers all of this, one syntax.</p>
 
-    <div class="steps">
-      <div class="step fi">
-        <div class="step-num">01</div>
-        <div class="step-name">Classification</div>
-        <div class="step-desc">Label each row against a taxonomy the LLM can read in natural language. Multi-column outputs let you return the label, a confidence hint, and a reason all in one call.</div>
+    <div class="tcard-grid">
+      <div class="tcard fi">
+        <div class="tcard-name">Classification</div>
+        <div class="tcard-sig"><span class="tcard-in">text</span> → <span class="tcard-out">label : str</span></div>
+        <div class="tcard-ex">"Classify {review} into one of {labels}"</div>
       </div>
-      <div class="step fi">
-        <div class="step-num">02</div>
-        <div class="step-name">Extraction</div>
-        <div class="step-desc">Pull typed fields out of messy text columns or attached documents. Pydantic schemas validate the output, grounding checks the extracted values against the source text.</div>
+      <div class="tcard fi">
+        <div class="tcard-name">Extraction</div>
+        <div class="tcard-sig"><span class="tcard-in">document</span> → <span class="tcard-out">name, date, amount</span></div>
+        <div class="tcard-ex">"Extract name, date, amount from: {document}"</div>
       </div>
-      <div class="step fi">
-        <div class="step-num">03</div>
-        <div class="step-name">Scoring &amp; evaluation</div>
-        <div class="step-desc">Ask the LLM to score, compare, or judge rows against criteria. Output is a numeric or categorical column your downstream code can aggregate and rank on.</div>
+      <div class="tcard fi">
+        <div class="tcard-name">Scoring</div>
+        <div class="tcard-sig"><span class="tcard-in">item</span> → <span class="tcard-out">score : int</span></div>
+        <div class="tcard-ex">"Score {item} against {criteria} 1–10"</div>
+      </div>
+      <div class="tcard fi">
+        <div class="tcard-name">Comparison</div>
+        <div class="tcard-sig"><span class="tcard-in">a, b</span> → <span class="tcard-out">match + reason</span></div>
+        <div class="tcard-ex">"Is {a} equivalent to {b}? yes/no + why"</div>
+      </div>
+      <div class="tcard fi">
+        <div class="tcard-name">Translation</div>
+        <div class="tcard-sig"><span class="tcard-in">text, lang</span> → <span class="tcard-out">translated</span></div>
+        <div class="tcard-ex">"Translate {text} to {tgt_lang}"</div>
+      </div>
+      <div class="tcard fi">
+        <div class="tcard-name">Summarization</div>
+        <div class="tcard-sig"><span class="tcard-in">document</span> → <span class="tcard-out">bullets : list</span></div>
+        <div class="tcard-ex">"Summarize {document} in 3 bullets"</div>
+      </div>
+      <div class="tcard fi">
+        <div class="tcard-name">Enrichment</div>
+        <div class="tcard-sig"><span class="tcard-in">row + docs</span> → <span class="tcard-out">richer fields</span></div>
+        <div class="tcard-ex">"Given {_kb_context}, enrich: {row}"</div>
+      </div>
+      <div class="tcard fi">
+        <div class="tcard-name">Validation</div>
+        <div class="tcard-sig"><span class="tcard-in">record</span> → <span class="tcard-out">pass/fail + why</span></div>
+        <div class="tcard-ex">"Does {record} meet {policy}?"</div>
       </div>
     </div>
   </div>
@@ -1109,43 +1286,82 @@ result = pipeline.<span class="f">execute</span>()
   }
 })();
 
-/* ── TERMINAL PROGRESS BAR ANIMATION ── */
+/* ── TERMINAL: line-by-line reveal + progress animation ── */
 (function(){
-  var fill = document.getElementById('progFill');
-  var pct  = document.getElementById('progPct');
-  var cost = document.getElementById('progCost');
-  if (!fill || !pct || !cost) return;
+  var lines  = document.querySelectorAll('#term .tl');
+  var report = document.querySelector('#term .report');
+  var fill   = document.getElementById('progFill');
+  var pct    = document.getElementById('progPct');
+  var cost   = document.getElementById('progCost');
+  if (!lines.length || !fill || !pct || !cost || !report) return;
 
-  var PROG_MS  = 2600;
-  var LOOP_MS  = 6500; // pause after fill, then reset
+  // 7 .tl lines: 0=$cmd, 1=session, 2=rows, 3=batch, 4=stage, 5=progress, 6=completed
+  // After line 5 reveals, progress bar fills for PROG_MS.
+  // After fill finishes, reveal line 6 (Completed), then reveal report card.
+  var LINE_STAGGER = 380;   // time between line reveals (0..5)
+  var PROG_MS      = 2000;  // progress bar fill duration
+  var LOOP_MS      = 9500;  // full cycle duration
 
-  function runProgress() {
-    // Reset
+  function animateProgress() {
+    // Hard reset
     fill.style.transition = 'none';
     fill.style.width = '0%';
     pct.textContent = '0%';
     cost.textContent = '$0.00';
 
-    // Force reflow so the transition actually restarts
-    // eslint-disable-next-line no-unused-expressions
-    fill.offsetWidth;
+    // Double rAF: guarantees the browser commits the 0% state
+    // before we install the new transition + width.
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        fill.style.transition = 'width ' + PROG_MS + 'ms cubic-bezier(0.22,1,0.36,1)';
+        fill.style.width = '100%';
 
-    // Fill
-    fill.style.transition = 'width ' + PROG_MS + 'ms cubic-bezier(0.22,1,0.36,1)';
-    fill.style.width = '100%';
-
-    var start = performance.now();
-    function tick(now) {
-      var p = Math.min((now - start) / PROG_MS, 1);
-      pct.textContent  = Math.round(p * 100) + '%';
-      cost.textContent = '$' + (p * 2.2841).toFixed(2);
-      if (p < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
+        var start = performance.now();
+        function tick(now) {
+          var p = Math.min((now - start) / PROG_MS, 1);
+          pct.textContent  = Math.round(p * 100) + '%';
+          cost.textContent = '$' + (p * 2.2841).toFixed(2);
+          if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      });
+    });
   }
 
-  setTimeout(runProgress, 500);
-  setInterval(runProgress, LOOP_MS);
+  function runSequence() {
+    // Reset everything
+    for (var i = 0; i < lines.length; i++) lines[i].classList.remove('show');
+    report.classList.remove('show');
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+    pct.textContent = '0%';
+    cost.textContent = '$0.00';
+
+    // Reveal lines 0..5 in order
+    for (var j = 0; j <= 5; j++) {
+      (function(idx){
+        setTimeout(function(){
+          lines[idx].classList.add('show');
+          if (idx === 5) {
+            // Progress line just appeared — start fill shortly after
+            setTimeout(animateProgress, 120);
+          }
+        }, idx * LINE_STAGGER);
+      })(j);
+    }
+
+    // After progress finishes, reveal Completed line, then report card
+    var completedAt = 5 * LINE_STAGGER + 120 + PROG_MS + 200;
+    setTimeout(function(){
+      lines[6].classList.add('show');
+    }, completedAt);
+    setTimeout(function(){
+      report.classList.add('show');
+    }, completedAt + 400);
+  }
+
+  setTimeout(runSequence, 400);
+  setInterval(runSequence, LOOP_MS);
 })();
 
 /* ── TICKER ── */
