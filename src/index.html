@@ -252,8 +252,9 @@
       min-height: 320px;
       overflow: hidden;
     }
-    .tl { opacity: 0; transform: translateY(6px); transition: opacity 0.35s, transform 0.35s; }
-    .tl.show { opacity: 1; transform: translateY(0); }
+    .tl { opacity: 1; }
+    .tl-reveal { opacity: 0; transform: translateY(6px); transition: opacity 0.35s, transform 0.35s; }
+    .tl-reveal.show { opacity: 1; transform: translateY(0); }
     .tl-cmd { color: var(--fg); }
     .tl-cmd .prompt { color: var(--accent); opacity: 0.6; }
     .tl-info { color: #666; }
@@ -263,19 +264,21 @@
     .tl-ok b { color: var(--fg); font-weight: 500; }
     .progress-bar {
       display: inline-block;
-      width: 180px;
-      height: 6px;
-      background: #1a1a1a;
-      border-radius: 3px;
+      width: 160px;
+      height: 8px;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 2px;
       overflow: hidden;
       vertical-align: middle;
       margin: 0 6px;
+      position: relative;
     }
     .progress-fill {
       height: 100%;
       width: 0%;
       background: var(--accent);
-      border-radius: 3px;
+      box-shadow: 0 0 6px rgba(62, 215, 178, 0.5);
       transition: width 2s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
@@ -1106,51 +1109,43 @@ result = pipeline.<span class="f">execute</span>()
   }
 })();
 
-/* ── TERMINAL ANIMATION ── */
+/* ── TERMINAL PROGRESS BAR ANIMATION ── */
 (function(){
-  var lines = document.querySelectorAll('#term .tl');
   var fill = document.getElementById('progFill');
-  var pct = document.getElementById('progPct');
+  var pct  = document.getElementById('progPct');
   var cost = document.getElementById('progCost');
-  // index:  0   1    2    3    4(progress)  5    6(frame top)
-  //         7    8    9    10   11   12   13
-  var delays = [250, 700, 1200, 1700, 2200, 5100, 6000, 6350, 6700, 7050, 7400, 7750, 8100, 8450];
-  var PROG_LINE = 4;      // the LLMInvocation progress bar line
-  var PROG_MS = 2600;     // time to fill the bar
+  if (!fill || !pct || !cost) return;
 
-  function runTerminal() {
-    for (var i = 0; i < lines.length; i++) lines[i].classList.remove('show');
+  var PROG_MS  = 2600;
+  var LOOP_MS  = 6500; // pause after fill, then reset
+
+  function runProgress() {
+    // Reset
     fill.style.transition = 'none';
     fill.style.width = '0%';
-    if (pct) pct.textContent = '0%';
-    if (cost) cost.textContent = '$0.00';
+    pct.textContent = '0%';
+    cost.textContent = '$0.00';
 
-    for (var j = 0; j < lines.length; j++) {
-      (function(idx, delay) {
-        setTimeout(function() {
-          lines[idx].classList.add('show');
-          if (idx === PROG_LINE) {
-            setTimeout(function() {
-              fill.style.transition = 'width ' + PROG_MS + 'ms cubic-bezier(0.22,1,0.36,1)';
-              fill.style.width = '100%';
-              var start = performance.now();
-              function tick(now) {
-                var p = Math.min((now - start) / PROG_MS, 1);
-                var percent = Math.round(p * 100);
-                if (pct) pct.textContent = percent + '%';
-                if (cost) cost.textContent = '$' + (p * 2.2841).toFixed(2);
-                if (p < 1) requestAnimationFrame(tick);
-              }
-              requestAnimationFrame(tick);
-            }, 50);
-          }
-        }, delay);
-      })(j, delays[j]);
+    // Force reflow so the transition actually restarts
+    // eslint-disable-next-line no-unused-expressions
+    fill.offsetWidth;
+
+    // Fill
+    fill.style.transition = 'width ' + PROG_MS + 'ms cubic-bezier(0.22,1,0.36,1)';
+    fill.style.width = '100%';
+
+    var start = performance.now();
+    function tick(now) {
+      var p = Math.min((now - start) / PROG_MS, 1);
+      pct.textContent  = Math.round(p * 100) + '%';
+      cost.textContent = '$' + (p * 2.2841).toFixed(2);
+      if (p < 1) requestAnimationFrame(tick);
     }
+    requestAnimationFrame(tick);
   }
 
-  setTimeout(runTerminal, 600);
-  setInterval(runTerminal, 16000);
+  setTimeout(runProgress, 500);
+  setInterval(runProgress, LOOP_MS);
 })();
 
 /* ── TICKER ── */
