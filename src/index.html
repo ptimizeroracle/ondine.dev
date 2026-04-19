@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ondine</title>
-  <meta name="description" content="Open-source data processing engine. Run any LLM on every row of your pandas or Polars DataFrame. Structured output, cost control, checkpointing. Built for data teams." />
+  <meta name="description" content="Data processing engine for LLMs with a trust layer. Runs any LLM over Pandas or Polars DataFrames and verifies the outputs against your own evidence. Checkpointing, cost caps, structured output. For teams who can't afford quiet hallucinations." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -679,19 +679,20 @@
   <div class="hero-inner">
     <!-- Left column: text -->
     <div class="hero-left">
-      <p class="hero-eyebrow">// llm-powered data processing engine</p>
+      <p class="hero-eyebrow">// data processing engine for LLMs</p>
 
       <h1 class="hero-h1">
         Run any LLM on<br>
-        <span class="hl-teal">every row</span> of<br>
-        your data.
+        <span class="hl-teal">every row</span>.<br>
+        Grounded, not guessed.
       </h1>
 
       <p class="hero-p">
-        Ondine is a batch processing engine for tabular data.
-        Feed it a pandas or Polars DataFrame, pick any LLM,
-        get structured columns back. Cost control, checkpointing,
-        and anti-hallucination are built in.
+        Ondine runs LLMs over Pandas and Polars DataFrames, then checks
+        their work. Each answer is verified against an evidence graph built
+        from your data before it lands in a column. Checkpointing, cost
+        caps, and retries come standard. So does the layer that catches
+        the model making things up.
       </p>
 
       <div class="hero-ctas">
@@ -761,49 +762,49 @@
 <div class="sec-full">
   <div class="sec">
     <p class="sec-label">Capabilities</p>
-    <h2 class="sec-title">Everything a production pipeline needs.</h2>
-    <p class="sec-sub">Not a toy wrapper. Ondine handles checkpointing, budget limits, structured output, and anti-hallucination out of the box.</p>
+    <h2 class="sec-title">Built for production. Built to be trusted.</h2>
+    <p class="sec-sub">The boring plumbing every batch LLM pipeline needs, plus the layer nobody else ships: a grounding check that catches hallucinations before they reach your database.</p>
 
     <div class="features">
       <div class="feat fi">
-        <div class="feat-name">Multi-row batching</div>
-        <div class="feat-desc">Pack N DataFrame rows into one prompt. The LLM processes an entire batch per API call instead of one row at a time.</div>
-        <div class="feat-metric">→ 10–100x API call reduction</div>
+        <div class="feat-name">Context Store (grounding)</div>
+        <div class="feat-desc">Every LLM answer is checked against an evidence graph built from your dataset. Contradictions get flagged, not returned. Rust + SQLite + FTS5 under the hood.</div>
+        <div class="feat-metric">→ The reason Ondine exists</div>
       </div>
       <div class="feat fi">
-        <div class="feat-name">Prefix caching</div>
-        <div class="feat-desc">System prompt + schema cached once across all batches. You only pay for the variable row data each time.</div>
-        <div class="feat-metric">→ 40–50% token cost savings</div>
-      </div>
-      <div class="feat fi">
-        <div class="feat-name">Checkpointing</div>
-        <div class="feat-desc">Results saved after every batch. Resume interrupted jobs without reprocessing completed rows. Crash-safe by default.</div>
-        <div class="feat-metric">→ 99.9% completion rate</div>
-      </div>
-      <div class="feat fi">
-        <div class="feat-name">Budget limits</div>
-        <div class="feat-desc">Set a max spend before running. Ondine estimates cost upfront and halts when the limit is reached. No surprise invoices.</div>
-        <div class="feat-metric">→ estimate() before run()</div>
+        <div class="feat-name">Evidence priming</div>
+        <div class="feat-desc">Prior validated answers are injected into later prompts so the same input produces the same output across runs. Kills drift on re-processed data.</div>
+        <div class="feat-metric">→ Cross-run consistency</div>
       </div>
       <div class="feat fi">
         <div class="feat-name">Structured output</div>
-        <div class="feat-desc">Define a Pydantic model. Every row comes back parsed, validated, and typed. No string parsing.</div>
+        <div class="feat-desc">Define a Pydantic model, get typed columns back. Malformed JSON auto-retries up to 3x. No string parsing in your pipeline code.</div>
         <div class="feat-metric">→ Pydantic v2 native</div>
       </div>
       <div class="feat fi">
-        <div class="feat-name">Context Store</div>
-        <div class="feat-desc">Anti-hallucination layer. Validates LLM outputs against known facts from your dataset before writing results.</div>
-        <div class="feat-metric">→ Grounded, verifiable outputs</div>
+        <div class="feat-name">Checkpointing</div>
+        <div class="feat-desc">State written to Parquet after every batch. A crash at row 80,000 of 200,000 resumes at 80,000, not zero.</div>
+        <div class="feat-metric">→ 99.9% completion rate</div>
       </div>
       <div class="feat fi">
-        <div class="feat-name">100+ LLM providers</div>
-        <div class="feat-desc">GPT-5.4, Claude, Gemini, Mistral, local Ollama. All through LiteLLM. Switch with one line.</div>
+        <div class="feat-name">Budget caps</div>
+        <div class="feat-desc">Set a hard dollar limit. Ondine estimates the run before it starts and stops when the cap is hit. No surprise invoices.</div>
+        <div class="feat-metric">→ estimate() before run()</div>
+      </div>
+      <div class="feat fi">
+        <div class="feat-name">Multi-row batching</div>
+        <div class="feat-desc">Pack N rows into one API call. 200 calls instead of 10,000 for a 10,000-row run at batch_size=50.</div>
+        <div class="feat-metric">→ 10–100x fewer calls</div>
+      </div>
+      <div class="feat fi">
+        <div class="feat-name">Prefix caching</div>
+        <div class="feat-desc">System prompt and schema are cached once across batches. You only pay for the variable row payload each call.</div>
+        <div class="feat-metric">→ 40–50% cost savings</div>
+      </div>
+      <div class="feat fi">
+        <div class="feat-name">100+ providers via LiteLLM</div>
+        <div class="feat-desc">OpenAI, Anthropic, Groq, Mistral, Cerebras, Ollama, MLX, vLLM, SGLang. Swap the model string, nothing else.</div>
         <div class="feat-metric">→ Zero vendor lock-in</div>
-      </div>
-      <div class="feat fi">
-        <div class="feat-name">Cost estimation</div>
-        <div class="feat-desc">Per-batch, per-row, and total cost breakdowns before you spend a single token.</div>
-        <div class="feat-metric">→ Full transparency</div>
       </div>
     </div>
   </div>
@@ -813,8 +814,8 @@
 <div class="code-wrap">
   <div class="code-inner">
     <p class="sec-label">Usage</p>
-    <h2 class="sec-title">Three lines to start.</h2>
-    <p class="sec-sub">Drop into any pandas or Polars workflow. No schemas, no infrastructure, no boilerplate.</p>
+    <h2 class="sec-title">Three lines to start. Trust layer included.</h2>
+    <p class="sec-sub">Drop Ondine into any Pandas or Polars workflow. Structured columns out, grounded against your own data. No orchestrator, no schema config files, no retry wrapper to maintain.</p>
 
     <div class="tabs" role="tablist">
       <div class="tab on" data-t="basic" role="tab" tabindex="0">Basic</div>
@@ -896,8 +897,8 @@ results = engine.<span class="f">run</span>(df)
 <div class="sec-full">
   <div class="sec">
     <p class="sec-label">How it works</p>
-    <h2 class="sec-title">How your data flows.</h2>
-    <p class="sec-sub">pandas or Polars DataFrame in, AI-enriched DataFrame out. Ondine handles the pipeline between.</p>
+    <h2 class="sec-title">DataFrame in. Verified columns out.</h2>
+    <p class="sec-sub">Pandas or Polars goes in. Ondine batches rows, runs the model, validates the JSON, checks each answer against the evidence graph, and writes a typed DataFrame back. Crash at row 80,000? Resume at 80,000.</p>
 
     <div class="steps">
       <div class="step fi">
@@ -922,8 +923,8 @@ results = engine.<span class="f">run</span>(df)
 <!-- ════════════════════ INSTALL CTA ════════════════════ -->
 <section class="cta-sec">
   <p class="sec-label" style="text-align:center">Get started</p>
-  <h2 class="cta-h2">One command.<br>LLM-powered data processing.</h2>
-  <p class="cta-p">Works with pandas and Polars, any LLM provider, and your existing data workflow.</p>
+  <h2 class="cta-h2">One command.<br>LLM processing you can trust.</h2>
+  <p class="cta-p">Works with Pandas and Polars, any LLM through LiteLLM, and any data workflow you already have. Grounding check included.</p>
 
   <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
     <div class="cmd-box" id="cmdBox" onclick="copyCmd()">
