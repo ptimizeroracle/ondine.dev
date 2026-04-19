@@ -763,7 +763,7 @@
   <div class="sec">
     <p class="sec-label">Capabilities</p>
     <h2 class="sec-title">Built for 100K-row runs. Built to survive them.</h2>
-    <p class="sec-sub">Most batch LLM tools die at row 8,000 when your laptop reboots. Ondine writes state after every batch, halts on a dollar threshold, and resumes from the exact row it stopped on. Plus a grounding layer nobody else ships.</p>
+    <p class="sec-sub">Most batch LLM tools die at row 8,000 when your laptop reboots. Ondine writes state after every batch, halts on a dollar threshold, and resumes from the exact row it stopped on. Plus a Knowledge Base for retrieval and an optional grounding layer nobody else ships.</p>
 
     <div class="features">
       <div class="feat fi">
@@ -797,9 +797,19 @@
         <div class="feat-metric">→ 40–50% cost savings</div>
       </div>
       <div class="feat fi">
+        <div class="feat-name">Knowledge Base (RAG)</div>
+        <div class="feat-desc">Ingest PDFs, Markdown, HTML, text, even scanned docs via OCR. Hybrid BM25 + dense search with optional cross-encoder reranker. Retrieval runs before the LLM as a pipeline stage.</div>
+        <div class="feat-metric">→ Pre-LLM context injection</div>
+      </div>
+      <div class="feat fi">
         <div class="feat-name">Context Store (grounding)</div>
-        <div class="feat-desc">Optional trust layer. Each LLM answer gets checked against an evidence graph from your dataset before being written. Rust + SQLite + FTS5.</div>
+        <div class="feat-desc">Optional trust layer. Each LLM answer checked against an evidence graph from your dataset before being written. Rust + SQLite + FTS5 backend.</div>
         <div class="feat-metric">→ Catches silent hallucinations</div>
+      </div>
+      <div class="feat fi">
+        <div class="feat-name">Evidence priming</div>
+        <div class="feat-desc">Validated prior answers injected into later prompts for the same input keys. Same row, same output. Kills drift when you re-process monthly data.</div>
+        <div class="feat-metric">→ Cross-run consistency</div>
       </div>
       <div class="feat fi">
         <div class="feat-name">100+ providers via LiteLLM</div>
@@ -818,75 +828,96 @@
     <p class="sec-sub">Drop Ondine into any Pandas or Polars workflow. Structured columns out, checkpointed from the first batch, capped before the first token. No orchestrator, no schema config files, no retry wrapper to maintain.</p>
 
     <div class="tabs" role="tablist">
-      <div class="tab on" data-t="basic" role="tab" tabindex="0">Basic</div>
-      <div class="tab" data-t="struct" role="tab" tabindex="0">Structured output</div>
-      <div class="tab" data-t="budget" role="tab" tabindex="0">Budget control</div>
-      <div class="tab" data-t="ctx" role="tab" tabindex="0">Context Store</div>
+      <div class="tab on" data-t="quick" role="tab" tabindex="0">Quickstart</div>
+      <div class="tab" data-t="pipe" role="tab" tabindex="0">Pipeline</div>
+      <div class="tab" data-t="kb" role="tab" tabindex="0">Knowledge Base (RAG)</div>
+      <div class="tab" data-t="ctx" role="tab" tabindex="0">Grounding</div>
     </div>
 
     <div class="panels">
-      <div class="panel on" id="p-basic"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">QuickPipeline</span>
+      <div class="panel on" id="p-quick"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">QuickPipeline</span>
 
-<span class="c"># 3 lines. Prompt → DataFrame columns.</span>
+<span class="c"># 3 lines. Sensible defaults. Checkpointing on by default.</span>
 pipeline = <span class="ac">QuickPipeline</span>.<span class="f">create</span>(
-    data=<span class="s">"reviews.csv"</span>,                          <span class="c"># CSV, Parquet, or DataFrame</span>
-    prompt=<span class="s">"Classify sentiment of: {review}"</span>,    <span class="c"># {placeholder} = column name</span>
+    data=<span class="s">"reviews.csv"</span>,                                   <span class="c"># CSV, Parquet, DataFrame</span>
+    prompt=<span class="s">"Analyze this review: {review}"</span>,               <span class="c"># {placeholder} = column</span>
+    output_columns=[<span class="s">"sentiment"</span>, <span class="s">"score"</span>, <span class="s">"key_topic"</span>],  <span class="c"># JSON parsed, typed</span>
     model=<span class="s">"gpt-5.4-mini"</span>,
-    output_columns=[<span class="s">"sentiment"</span>],
+    max_budget=<span class="n">5.00</span>,                                       <span class="c"># hard USD cap</span>
 )
 
-result = pipeline.<span class="f">execute</span>()
-<span class="f">print</span>(<span class="s">f"Processed </span>{result.metrics.processed_rows}<span class="s"> rows · $</span>{result.costs.total_cost:.2f}<span class="s">"</span>)</pre></div>
+result = pipeline.<span class="f">execute</span>()  <span class="c"># crash at row 80K? re-run. resumes at 80K.</span></pre></div>
 
-      <div class="panel" id="p-struct"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">QuickPipeline</span>
+      <div class="panel" id="p-pipe"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">PipelineBuilder</span>
+<span class="k">from</span> pydantic <span class="k">import</span> BaseModel
 
-<span class="c"># Multiple columns from one prompt — JSON parsed, validated, typed.</span>
-pipeline = <span class="ac">QuickPipeline</span>.<span class="f">create</span>(
-    data=<span class="s">"reviews.csv"</span>,
-    prompt=<span class="s">"Analyze this review: {review}"</span>,
-    model=<span class="s">"gpt-5.4-mini"</span>,
-    output_columns=[<span class="s">"sentiment"</span>, <span class="s">"score"</span>, <span class="s">"key_topic"</span>],
-    batch_size=<span class="n">50</span>,                <span class="c"># 50 rows per call → 200 calls, not 10,000</span>
-)
+<span class="k">class</span> <span class="f">ReviewAnalysis</span>(BaseModel):
+    sentiment: <span class="f">str</span>
+    score: <span class="f">int</span>
+    topic: <span class="f">str</span>
 
-result = pipeline.<span class="f">execute</span>()
-<span class="c"># result.dataframe has sentiment, score, key_topic columns — all parsed.</span></pre></div>
-
-      <div class="panel" id="p-budget"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">QuickPipeline</span>
-
-pipeline = <span class="ac">QuickPipeline</span>.<span class="f">create</span>(
-    data=<span class="s">"tickets.csv"</span>,
-    prompt=<span class="s">"Summarize: {ticket_text}"</span>,
-    model=<span class="s">"gpt-5.4"</span>,
-    output_columns=[<span class="s">"summary"</span>],
-    max_budget=<span class="n">5.00</span>,                <span class="c"># hard USD cap — pipeline halts at limit</span>
-    batch_size=<span class="n">20</span>,
-)
-
-<span class="c"># Estimate before spending a token</span>
-est = pipeline.<span class="f">estimate</span>()
-<span class="f">print</span>(<span class="s">f"Estimated: $</span>{est.total_cost:.4f}<span class="s"> · Batches: </span>{est.total_batches}<span class="s">"</span>)
-
-result = pipeline.<span class="f">execute</span>()  <span class="c"># checkpoints automatically, resumes on crash</span></pre></div>
-
-      <div class="panel" id="p-ctx"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">PipelineBuilder</span>
-<span class="k">from</span> ondine.context <span class="k">import</span> <span class="ac">RustContextStore</span>
-
-<span class="c"># Grounding layer: every LLM answer verified against your evidence</span>
+<span class="c"># Full pipeline. Composable stages, total control.</span>
 pipeline = (
     <span class="ac">PipelineBuilder</span>.<span class="f">create</span>()
     .<span class="f">from_csv</span>(<span class="s">"reviews.csv"</span>,
               input_columns=[<span class="s">"review"</span>],
-              output_columns=[<span class="s">"sentiment"</span>, <span class="s">"score"</span>])
-    .<span class="f">with_prompt</span>(<span class="s">"Analyze: {review}"</span>)
+              output_columns=[<span class="s">"sentiment"</span>, <span class="s">"score"</span>, <span class="s">"topic"</span>])
+    .<span class="f">with_prompt</span>(<span class="s">"Analyze the review: {review}"</span>)
     .<span class="f">with_llm</span>(provider=<span class="s">"openai"</span>, model=<span class="s">"gpt-5.4-mini"</span>)
+    .<span class="f">with_structured_output</span>(ReviewAnalysis)
+    .<span class="f">with_batch_size</span>(<span class="n">50</span>)              <span class="c"># 200 calls, not 10,000</span>
+    .<span class="f">with_max_budget</span>(<span class="n">25.00</span>)            <span class="c"># hard halt at $25</span>
+    .<span class="f">with_checkpoint_interval</span>(<span class="n">100</span>)    <span class="c"># checkpoint every 100 rows</span>
+    .<span class="f">with_disk_cache</span>(<span class="s">".cache"</span>)          <span class="c"># identical prompts = $0 second call</span>
+    .<span class="f">with_router</span>(strategy=<span class="s">"latency"</span>)   <span class="c"># fastest provider wins</span>
+    .<span class="f">build</span>()
+)
+
+result = pipeline.<span class="f">execute</span>()</pre></div>
+
+      <div class="panel" id="p-kb"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">PipelineBuilder</span>
+<span class="k">from</span> ondine.knowledge <span class="k">import</span> <span class="ac">KnowledgeStore</span>
+
+<span class="c"># Index your docs once. Hybrid BM25 + dense search, optional reranker.</span>
+kb = <span class="ac">KnowledgeStore</span>(<span class="s">"knowledge.db"</span>)
+kb.<span class="f">ingest</span>(<span class="s">"docs/"</span>)   <span class="c"># PDFs, Markdown, HTML, text — OCR included</span>
+
+<span class="c"># Retrieval stage runs before the LLM, injects {_kb_context}.</span>
+pipeline = (
+    <span class="ac">PipelineBuilder</span>.<span class="f">create</span>()
+    .<span class="f">from_csv</span>(<span class="s">"questions.csv"</span>,
+              input_columns=[<span class="s">"question"</span>],
+              output_columns=[<span class="s">"answer"</span>])
+    .<span class="f">with_knowledge_base</span>(kb,
+                         top_k=<span class="n">5</span>,
+                         rerank=<span class="bool">True</span>,              <span class="c"># cross-encoder reranker</span>
+                         query_transform=<span class="s">"hyde"</span>)   <span class="c"># or "multi-query", "step-back"</span>
+    .<span class="f">with_prompt</span>(<span class="s">"Context:\n{_kb_context}\n\nQ: {question}\nA:"</span>)
+    .<span class="f">with_llm</span>(model=<span class="s">"gpt-5.4-mini"</span>)
+    .<span class="f">build</span>()
+)
+
+result = pipeline.<span class="f">execute</span>()</pre></div>
+
+      <div class="panel" id="p-ctx"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">PipelineBuilder</span>
+<span class="k">from</span> ondine.context <span class="k">import</span> <span class="ac">RustContextStore</span>
+
+<span class="c"># Optional trust layer: LLM answers verified against your evidence graph.</span>
+pipeline = (
+    <span class="ac">PipelineBuilder</span>.<span class="f">create</span>()
+    .<span class="f">from_csv</span>(<span class="s">"records.csv"</span>,
+              input_columns=[<span class="s">"record"</span>],
+              output_columns=[<span class="s">"extracted"</span>])
+    .<span class="f">with_prompt</span>(<span class="s">"Extract: {record}"</span>)
+    .<span class="f">with_llm</span>(model=<span class="s">"gpt-5.4-mini"</span>)
     .<span class="f">with_context_store</span>(<span class="ac">RustContextStore</span>(<span class="s">"evidence.db"</span>))
-    .<span class="f">with_grounding</span>(threshold=<span class="n">0.3</span>)     <span class="c"># contradictions flagged, not written</span>
+    .<span class="f">with_grounding</span>(threshold=<span class="n">0.3</span>)         <span class="c"># contradictions flagged, not written</span>
+    .<span class="f">with_evidence_priming</span>(top_k=<span class="n">3</span>)          <span class="c"># cross-run consistency</span>
     .<span class="f">build</span>()
 )
 
 result = pipeline.<span class="f">execute</span>()
-<span class="c"># Rows that failed grounding are marked — auditable, not silent.</span></pre></div>
+<span class="c"># Rows that failed grounding are marked in result.dataframe.</span></pre></div>
     </div>
   </div>
 </div>
