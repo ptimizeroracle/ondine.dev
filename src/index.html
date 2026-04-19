@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ondine</title>
-  <meta name="description" content="The bulletproof batch engine for LLM pipelines. Checkpoints every batch, caps every dollar, resumes from any crash. Runs any LLM over Pandas or Polars DataFrames. Plus a grounding layer for runs where hallucinations aren't acceptable." />
+  <meta name="description" content="A prompt is a column. Ondine makes LLM calls a first-class DataFrame operation. Define columns with natural language. Ondine computes them at production scale — checkpointed, capped, grounded, with full observability." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -411,6 +411,75 @@
     }
 
     /* ═══════════════════════════════════════════
+       DIMENSIONS — 5-panel architecture grid
+       ═══════════════════════════════════════════ */
+    .dims {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+    }
+    .dim {
+      padding: 32px 0 28px;
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 40px;
+      transition: background-color 0.2s;
+    }
+    .dim:hover {
+      background: rgba(255, 255, 255, 0.015);
+    }
+    .dim-head {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-left: 4px;
+      border-left: 2px solid var(--accent);
+      padding-left: 16px;
+    }
+    .dim-label {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+    .dim-role {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--fg-dim);
+      font-style: italic;
+    }
+    .dim-desc {
+      font-size: 14px;
+      color: var(--fg);
+      line-height: 1.6;
+      margin-bottom: 14px;
+      max-width: 640px;
+    }
+    .dim-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      grid-column: 2;
+    }
+    .dim-items span {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--fg-dim);
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      border-radius: 3px;
+    }
+    @media (max-width: 820px) {
+      .dim { grid-template-columns: 1fr; gap: 16px; }
+      .dim-items { grid-column: 1; }
+    }
+
+    /* ═══════════════════════════════════════════
        CODE — tabbed examples
        ═══════════════════════════════════════════ */
     .code-wrap {
@@ -679,20 +748,18 @@
   <div class="hero-inner">
     <!-- Left column: text -->
     <div class="hero-left">
-      <p class="hero-eyebrow">// batch LLM pipelines you don't babysit</p>
+      <p class="hero-eyebrow">// a new DataFrame primitive</p>
 
       <h1 class="hero-h1">
-        Run any LLM on<br>
-        <span class="hl-teal">every row</span>.<br>
-        Checkpointed. Capped. Recoverable.
+        A prompt<br>
+        is a <span class="hl-teal">column</span>.
       </h1>
 
       <p class="hero-p">
-        Ondine turns a prompt into structured DataFrame columns. Every
-        batch is checkpointed to Parquet. Every dollar is capped before
-        the run starts. Every crash resumes from the exact row it
-        stopped on. 100+ providers via LiteLLM. Plus a grounding layer
-        for the runs where silent hallucinations aren't an option.
+        Ondine makes LLM calls a first-class DataFrame operation.
+        Define a column with natural language. Ondine computes it at
+        production scale — checkpointed, capped, grounded against your
+        own data, observable end-to-end.
       </p>
 
       <div class="hero-ctas">
@@ -761,60 +828,87 @@
 <!-- ════════════════════ FEATURES ════════════════════ -->
 <div class="sec-full">
   <div class="sec">
-    <p class="sec-label">Capabilities</p>
-    <h2 class="sec-title">Built for 100K-row runs. Built to survive them.</h2>
-    <p class="sec-sub">Most batch LLM tools die at row 8,000 when your laptop reboots. Ondine writes state after every batch, halts on a dollar threshold, and resumes from the exact row it stopped on. Plus a Knowledge Base for retrieval and an optional grounding layer nobody else ships.</p>
+    <p class="sec-label">Architecture</p>
+    <h2 class="sec-title">One primitive. Five dimensions of support.</h2>
+    <p class="sec-sub">A prompt is a column. Everything else is how to improve the inputs, constrain the outputs, or run production reliably. Ondine's feature set organizes around five dimensions around that primitive.</p>
 
-    <div class="features">
-      <div class="feat fi">
-        <div class="feat-name">Checkpointing</div>
-        <div class="feat-desc">Results written to Parquet after every batch. A crash at row 80,000 of 200,000 resumes at 80,000. Not zero. No reprocessing, no lost spend.</div>
-        <div class="feat-metric">→ 99.9% completion rate</div>
+    <div class="dims">
+      <div class="dim fi">
+        <div class="dim-head">
+          <span class="dim-label">01 / INPUTS</span>
+          <span class="dim-role">make the prompt richer</span>
+        </div>
+        <div class="dim-desc">Feed the LLM more than raw column text. Pull context from documents, images, and prior runs.</div>
+        <div class="dim-items">
+          <span>Knowledge Base (RAG)</span>
+          <span>OCR (Vision / Tesseract / DocTR)</span>
+          <span>PDF + Markdown + HTML loaders</span>
+          <span>Multi-column placeholders</span>
+          <span>Jinja2 templates</span>
+          <span>System prompts</span>
+        </div>
       </div>
-      <div class="feat fi">
-        <div class="feat-name">Hard budget caps</div>
-        <div class="feat-desc">Set a dollar limit. Ondine estimates the run first, then stops the pipeline when the cap is hit. The only open-source tool that enforces this, not just logs it.</div>
-        <div class="feat-metric">→ estimate() before run()</div>
+
+      <div class="dim fi">
+        <div class="dim-head">
+          <span class="dim-label">02 / OUTPUTS</span>
+          <span class="dim-role">constrain what comes back</span>
+        </div>
+        <div class="dim-desc">Stop parsing strings. Get typed columns, validated against your schema, verified against your evidence.</div>
+        <div class="dim-items">
+          <span>Pydantic structured output</span>
+          <span>JSON auto-retry (3x)</span>
+          <span>Multi-column parsing</span>
+          <span>Grounding verification</span>
+          <span>Context Store (Rust + SQLite + FTS5)</span>
+        </div>
       </div>
-      <div class="feat fi">
-        <div class="feat-name">Crash-resume</div>
-        <div class="feat-desc">No orchestrator, no state server, no manual replay. Re-run the same script and Ondine picks up where the last process died. Row-level accuracy.</div>
-        <div class="feat-metric">→ Zero reprocessing</div>
+
+      <div class="dim fi">
+        <div class="dim-head">
+          <span class="dim-label">03 / EXECUTION</span>
+          <span class="dim-role">run N rows reliably</span>
+        </div>
+        <div class="dim-desc">Production plumbing that `.apply()` doesn't give you. Budget, batching, backoff, caching, checkpoints.</div>
+        <div class="dim-items">
+          <span>Checkpointing to Parquet</span>
+          <span>Hard budget caps</span>
+          <span>Multi-row batching</span>
+          <span>Prefix caching (40–50% savings)</span>
+          <span>Disk / Redis response cache</span>
+          <span>Gradient2 adaptive concurrency</span>
+          <span>Retry-After (5 header shapes)</span>
+        </div>
       </div>
-      <div class="feat fi">
-        <div class="feat-name">Structured output</div>
-        <div class="feat-desc">Define a Pydantic model, get typed columns back. Malformed JSON auto-retries up to 3x. No string parsing in your pipeline code.</div>
-        <div class="feat-metric">→ Pydantic v2 native</div>
+
+      <div class="dim fi">
+        <div class="dim-head">
+          <span class="dim-label">04 / OBSERVATION</span>
+          <span class="dim-role">see what happened</span>
+        </div>
+        <div class="dim-desc">Progress, cost, traces. On by default. Integrates with the observability stack you already run.</div>
+        <div class="dim-items">
+          <span>Progress bars + structured logs</span>
+          <span>Cost tracking (Decimal precision)</span>
+          <span>Langfuse</span>
+          <span>OpenTelemetry</span>
+          <span>Prometheus metrics export</span>
+        </div>
       </div>
-      <div class="feat fi">
-        <div class="feat-name">Multi-row batching</div>
-        <div class="feat-desc">Pack N rows into one API call. 200 calls instead of 10,000 for a 10,000-row run at batch_size=50. Same tokens, fewer round trips.</div>
-        <div class="feat-metric">→ 10–100x fewer calls</div>
-      </div>
-      <div class="feat fi">
-        <div class="feat-name">Prefix caching</div>
-        <div class="feat-desc">System prompt and schema cached once across batches. You only pay for the variable row payload on each call.</div>
-        <div class="feat-metric">→ 40–50% cost savings</div>
-      </div>
-      <div class="feat fi">
-        <div class="feat-name">Knowledge Base (RAG)</div>
-        <div class="feat-desc">Ingest PDFs, Markdown, HTML, text, even scanned docs via OCR. Hybrid BM25 + dense search with optional cross-encoder reranker. Retrieval runs before the LLM as a pipeline stage.</div>
-        <div class="feat-metric">→ Pre-LLM context injection</div>
-      </div>
-      <div class="feat fi">
-        <div class="feat-name">Context Store (grounding)</div>
-        <div class="feat-desc">Optional trust layer. Each LLM answer checked against an evidence graph from your dataset before being written. Rust + SQLite + FTS5 backend.</div>
-        <div class="feat-metric">→ Catches silent hallucinations</div>
-      </div>
-      <div class="feat fi">
-        <div class="feat-name">Evidence priming</div>
-        <div class="feat-desc">Validated prior answers injected into later prompts for the same input keys. Same row, same output. Kills drift when you re-process monthly data.</div>
-        <div class="feat-metric">→ Cross-run consistency</div>
-      </div>
-      <div class="feat fi">
-        <div class="feat-name">100+ providers via LiteLLM</div>
-        <div class="feat-desc">OpenAI, Anthropic, Groq, Mistral, Cerebras, Ollama, MLX, vLLM, SGLang. Swap the model string, nothing else changes.</div>
-        <div class="feat-metric">→ Zero vendor lock-in</div>
+
+      <div class="dim fi">
+        <div class="dim-head">
+          <span class="dim-label">05 / PROVIDERS</span>
+          <span class="dim-role">any LLM backend</span>
+        </div>
+        <div class="dim-desc">Swap providers with a string. Route between them automatically. Run local when you need to.</div>
+        <div class="dim-items">
+          <span>100+ providers via LiteLLM</span>
+          <span>Router with latency failover</span>
+          <span>Ollama / MLX / vLLM / SGLang</span>
+          <span>Azure Managed Identity</span>
+          <span>Custom OpenAI-compatible endpoints</span>
+        </div>
       </div>
     </div>
   </div>
@@ -824,8 +918,8 @@
 <div class="code-wrap">
   <div class="code-inner">
     <p class="sec-label">Usage</p>
-    <h2 class="sec-title">Three lines to start. Zero to babysit.</h2>
-    <p class="sec-sub">Drop Ondine into any Pandas or Polars workflow. Structured columns out, checkpointed from the first batch, capped before the first token. No orchestrator, no schema config files, no retry wrapper to maintain.</p>
+    <h2 class="sec-title">A prompt, a column. Literally.</h2>
+    <p class="sec-sub">Every tab below shows the same primitive in different clothes. Define a column with natural language. Ondine computes it. The rest is inputs (KB, docs) and constraints (schema, grounding).</p>
 
     <div class="tabs" role="tablist">
       <div class="tab on" data-t="quick" role="tab" tabindex="0">Quickstart</div>
@@ -922,28 +1016,28 @@ result = pipeline.<span class="f">execute</span>()
   </div>
 </div>
 
-<!-- ════════════════════ HOW IT WORKS ════════════════════ -->
+<!-- ════════════════════ USE CASES ════════════════════ -->
 <div class="sec-full">
   <div class="sec">
-    <p class="sec-label">How it works</p>
-    <h2 class="sec-title">DataFrame in. Typed columns out.</h2>
-    <p class="sec-sub">Pandas or Polars goes in. Ondine batches the rows, estimates the cost, runs the model, validates the JSON, writes a checkpoint, and returns a typed DataFrame. Crash at row 80,000? Re-run the script. It resumes at 80,000.</p>
+    <p class="sec-label">What "a prompt is a column" unlocks</p>
+    <h2 class="sec-title">Same primitive. Any use case.</h2>
+    <p class="sec-sub">The use case lives in the prompt. Ondine doesn't care whether you're enriching product data, extracting fields from 10,000 contracts, or scoring an algorithm's output with context. Same `Prompt(columns) → new columns` every time.</p>
 
     <div class="steps">
       <div class="step fi">
         <div class="step-num">01</div>
-        <div class="step-name">Pack rows into batches</div>
-        <div class="step-desc">Instead of 1 row per API call, Ondine packs N rows into a single prompt. The LLM sees a mini-table and returns N results at once. Batch size is tunable per use case.</div>
+        <div class="step-name">Product enrichment</div>
+        <div class="step-desc">Feed the LLM facets, spec PDFs, product images, taxonomy. Get enriched descriptions back as typed columns. The whole row becomes the prompt context. Output column becomes the new description.</div>
       </div>
       <div class="step fi">
         <div class="step-num">02</div>
-        <div class="step-name">Cache the shared prefix</div>
-        <div class="step-desc">Your system prompt and output schema are sent once, then cached. Only the batch data varies between calls. This is where prefix caching cuts 40–50% of your token cost.</div>
+        <div class="step-name">Document extraction</div>
+        <div class="step-desc">10,000 contracts, medical records, or regulatory filings. Ingest the docs via OCR + KB, run a schema-validated extraction prompt, get structured columns. Grounding verifies each field against source text.</div>
       </div>
       <div class="step fi">
         <div class="step-num">03</div>
-        <div class="step-name">Checkpoint and reassemble</div>
-        <div class="step-desc">Results are written after every batch. If a job crashes mid-run, restart picks up exactly where it stopped. Final output reassembles into your original DataFrame shape.</div>
+        <div class="step-name">Algorithm evaluation</div>
+        <div class="step-desc">Your core algorithm produces candidate pairs (swaps, matches, recommendations). Ondine scores each pair with an LLM using contextual data. Output is a quality-score column your UI can rank on.</div>
       </div>
     </div>
   </div>
@@ -952,8 +1046,8 @@ result = pipeline.<span class="f">execute</span>()
 <!-- ════════════════════ INSTALL CTA ════════════════════ -->
 <section class="cta-sec">
   <p class="sec-label" style="text-align:center">Get started</p>
-  <h2 class="cta-h2">One command.<br>Batch LLM pipelines that don't fall over.</h2>
-  <p class="cta-p">Works with Pandas and Polars, any LLM through LiteLLM, any data workflow you already have. Checkpointing, cost caps, and crash-resume on by default. Grounding layer opt-in.</p>
+  <h2 class="cta-h2">One command.<br>A prompt becomes a column.</h2>
+  <p class="cta-p">Pandas and Polars. Any LLM through LiteLLM. Any data workflow you already have. Five dimensions of production support around one primitive.</p>
 
   <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
     <div class="cmd-box" id="cmdBox" onclick="copyCmd()">
