@@ -1020,24 +1020,24 @@ result = pipeline.<span class="f">execute</span>()
 <div class="sec-full">
   <div class="sec">
     <p class="sec-label">What "a prompt is a column" unlocks</p>
-    <h2 class="sec-title">Same primitive. Any use case.</h2>
-    <p class="sec-sub">The use case lives in the prompt. Ondine doesn't care whether you're enriching product data, extracting fields from 10,000 contracts, or scoring an algorithm's output with context. Same `Prompt(columns) → new columns` every time.</p>
+    <h2 class="sec-title">Same primitive. Any transform.</h2>
+    <p class="sec-sub">The use case lives in the prompt. Ondine doesn't care what you're computing. Same `Prompt(columns) → new_columns` every time.</p>
 
     <div class="steps">
       <div class="step fi">
         <div class="step-num">01</div>
-        <div class="step-name">Product enrichment</div>
-        <div class="step-desc">Feed the LLM facets, spec PDFs, product images, taxonomy. Get enriched descriptions back as typed columns. The whole row becomes the prompt context. Output column becomes the new description.</div>
+        <div class="step-name">Classification</div>
+        <div class="step-desc">Label each row against a taxonomy the LLM can read in natural language. Multi-column outputs let you return the label, a confidence hint, and a reason all in one call.</div>
       </div>
       <div class="step fi">
         <div class="step-num">02</div>
-        <div class="step-name">Document extraction</div>
-        <div class="step-desc">10,000 contracts, medical records, or regulatory filings. Ingest the docs via OCR + KB, run a schema-validated extraction prompt, get structured columns. Grounding verifies each field against source text.</div>
+        <div class="step-name">Extraction</div>
+        <div class="step-desc">Pull typed fields out of messy text columns or attached documents. Pydantic schemas validate the output, grounding checks the extracted values against the source text.</div>
       </div>
       <div class="step fi">
         <div class="step-num">03</div>
-        <div class="step-name">Algorithm evaluation</div>
-        <div class="step-desc">Your core algorithm produces candidate pairs (swaps, matches, recommendations). Ondine scores each pair with an LLM using contextual data. Output is a quality-score column your UI can rank on.</div>
+        <div class="step-name">Scoring &amp; evaluation</div>
+        <div class="step-desc">Ask the LLM to score, compare, or judge rows against criteria. Output is a numeric or categorical column your downstream code can aggregate and rank on.</div>
       </div>
     </div>
   </div>
