@@ -778,21 +778,23 @@
         <span class="dot dot-r"></span>
         <span class="dot dot-y"></span>
         <span class="dot dot-g"></span>
-        <span class="terminal-title">python — ondine</span>
+        <span class="terminal-title">python · ondine</span>
       </div>
       <div class="terminal-body" id="term">
-        <div class="tl tl-cmd"><span class="prompt">$ </span>python analyze_reviews.py</div>
-        <div class="tl tl-info">◆ Loading <b>reviews.csv</b> — 10,000 rows × 4 columns</div>
-        <div class="tl tl-info">◆ Task: classify sentiment, score 1–10, extract topic</div>
-        <div class="tl tl-info">◆ Model: <b>gpt-5.4-mini</b> · Batch size: 50 rows/call</div>
-        <div class="tl tl-info">◆ Estimated cost: <b>$2.30</b></div>
-        <div class="tl tl-info">◆ Processing rows...</div>
-        <div class="tl tl-info">  <span class="progress-bar"><span class="progress-fill" id="progFill"></span></span> <span id="progPct">0%</span> — 10,000 rows</div>
-        <div class="tl tl-ok">✓ <b>Complete.</b> 3 new columns added:</div>
-        <div class="tl tl-ok">  → <b>sentiment</b> <span style="color:#666">(str)</span> positive | neutral | negative</div>
-        <div class="tl tl-ok">  → <b>score</b> <span style="color:#666">(int)</span> 1–10</div>
-        <div class="tl tl-ok">  → <b>key_topic</b> <span style="color:#666">(str)</span> free text</div>
-        <div class="tl tl-ok">✓ Saved to <b>reviews_analyzed.csv</b> · $2.28 spent</div>
+        <div class="tl tl-cmd"><span class="prompt">$ </span>python enrich_reviews.py</div>
+        <div class="tl tl-info">INFO  Pipeline started · session=<b>7d3a2f8e</b> · <b>10,000</b> rows</div>
+        <div class="tl tl-info">INFO  Stage: LLMInvocation · <b>gpt-5.4-mini</b> · batch=50</div>
+        <div class="tl tl-info">INFO  Pre-run estimate: <b>$2.30</b>  ·  budget cap: <b>$5.00</b></div>
+        <div class="tl tl-info">LLMInvocation <span class="progress-bar"><span class="progress-fill" id="progFill"></span></span> <span id="progPct">0%</span> · 50 rows/s · <span id="progCost">$0.00</span></div>
+        <div class="tl tl-info">INFO  Checkpoint saved at row 10,000</div>
+        <div class="tl tl-ok">┌───────────────────────────────────────┐</div>
+        <div class="tl tl-ok">│            <b>Pipeline Report</b>            │</div>
+        <div class="tl tl-ok">├───────────────────────────────────────┤</div>
+        <div class="tl tl-ok">│ Status     : <b>COMPLETE</b>                 │</div>
+        <div class="tl tl-ok">│ Rows out   : <b>10,000</b>  ·  calls : <b>200</b>   │</div>
+        <div class="tl tl-ok">│ Duration   : <b>3m 18s</b>  (50.5 rows/sec)  │</div>
+        <div class="tl tl-ok">│ Total cost : <b>$2.2841</b> ($0.000228/row)  │</div>
+        <div class="tl tl-ok">└───────────────────────────────────────┘</div>
       </div>
     </div>
   </div>
@@ -1109,30 +1111,34 @@ result = pipeline.<span class="f">execute</span>()
   var lines = document.querySelectorAll('#term .tl');
   var fill = document.getElementById('progFill');
   var pct = document.getElementById('progPct');
-  var delays = [300, 800, 1400, 2000, 2600, 3200, 3800, 6200, 6800, 7200, 7600, 8200];
+  var cost = document.getElementById('progCost');
+  // index:  0   1    2    3    4(progress)  5    6(frame top)
+  //         7    8    9    10   11   12   13
+  var delays = [250, 700, 1200, 1700, 2200, 5100, 6000, 6350, 6700, 7050, 7400, 7750, 8100, 8450];
+  var PROG_LINE = 4;      // the LLMInvocation progress bar line
+  var PROG_MS = 2600;     // time to fill the bar
 
   function runTerminal() {
-    // Reset
     for (var i = 0; i < lines.length; i++) lines[i].classList.remove('show');
     fill.style.transition = 'none';
     fill.style.width = '0%';
-    pct.textContent = '0%';
+    if (pct) pct.textContent = '0%';
+    if (cost) cost.textContent = '$0.00';
 
-    // Show lines with delays
     for (var j = 0; j < lines.length; j++) {
       (function(idx, delay) {
         setTimeout(function() {
           lines[idx].classList.add('show');
-          // Progress bar animation on line 6 (index 6)
-          if (idx === 6) {
+          if (idx === PROG_LINE) {
             setTimeout(function() {
-              fill.style.transition = 'width 2s cubic-bezier(0.22,1,0.36,1)';
+              fill.style.transition = 'width ' + PROG_MS + 'ms cubic-bezier(0.22,1,0.36,1)';
               fill.style.width = '100%';
-              // Animate percentage text
               var start = performance.now();
               function tick(now) {
-                var p = Math.min((now - start) / 2000, 1);
-                pct.textContent = Math.round(p * 100) + '%';
+                var p = Math.min((now - start) / PROG_MS, 1);
+                var percent = Math.round(p * 100);
+                if (pct) pct.textContent = percent + '%';
+                if (cost) cost.textContent = '$' + (p * 2.2841).toFixed(2);
                 if (p < 1) requestAnimationFrame(tick);
               }
               requestAnimationFrame(tick);
@@ -1143,10 +1149,8 @@ result = pipeline.<span class="f">execute</span>()
     }
   }
 
-  // First run after small delay
   setTimeout(runTerminal, 600);
-  // Loop
-  setInterval(runTerminal, 14000);
+  setInterval(runTerminal, 16000);
 })();
 
 /* ── TICKER ── */
