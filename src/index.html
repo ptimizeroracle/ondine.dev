@@ -684,15 +684,15 @@
       <h1 class="hero-h1">
         Run any LLM on<br>
         <span class="hl-teal">every row</span>.<br>
-        Grounded, not guessed.
+        By prompt, not code.
       </h1>
 
       <p class="hero-p">
-        Ondine runs LLMs over Pandas and Polars DataFrames, then checks
-        their work. Each answer is verified against an evidence graph built
-        from your data before it lands in a column. Checkpointing, cost
-        caps, and retries come standard. So does the layer that catches
-        the model making things up.
+        Ondine turns a prompt into structured DataFrame columns. Pandas
+        or Polars in, typed output back. 100+ providers via LiteLLM,
+        checkpointing, cost caps, and retries are built in. So is a
+        grounding layer that verifies every answer against your own
+        data before it's written — the part nobody else ships.
       </p>
 
       <div class="hero-ctas">
@@ -825,70 +825,68 @@
     </div>
 
     <div class="panels">
-      <div class="panel on" id="p-basic"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">import</span> polars <span class="k">as</span> pl  <span class="c"># or: import pandas as pd</span>
-<span class="k">from</span> ondine <span class="k">import</span> <span class="ac">Ondine</span>
+      <div class="panel on" id="p-basic"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">QuickPipeline</span>
 
-df = pl.<span class="f">read_csv</span>(<span class="s">"reviews.csv"</span>)  <span class="c"># 10,000 rows — pandas works too</span>
-
-engine = <span class="ac">Ondine</span>(
+<span class="c"># 3 lines. Prompt → DataFrame columns.</span>
+pipeline = <span class="ac">QuickPipeline</span>.<span class="f">create</span>(
+    data=<span class="s">"reviews.csv"</span>,                          <span class="c"># CSV, Parquet, or DataFrame</span>
+    prompt=<span class="s">"Classify sentiment of: {review}"</span>,    <span class="c"># {placeholder} = column name</span>
     model=<span class="s">"gpt-5.4-mini"</span>,
-    prompt=<span class="s">"Classify sentiment: positive, neutral, or negative."</span>,
-    batch_size=<span class="n">50</span>,             <span class="c"># 50 rows per API call → 200 calls, not 10,000</span>
+    output_columns=[<span class="s">"sentiment"</span>],
 )
 
-results = engine.<span class="f">run</span>(df)
-<span class="f">print</span>(results[[<span class="s">"review"</span>, <span class="s">"sentiment"</span>]])</pre></div>
+result = pipeline.<span class="f">execute</span>()
+<span class="f">print</span>(<span class="s">f"Processed </span>{result.metrics.processed_rows}<span class="s"> rows · $</span>{result.costs.total_cost:.2f}<span class="s">"</span>)</pre></div>
 
-      <div class="panel" id="p-struct"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> pydantic <span class="k">import</span> BaseModel
-<span class="k">from</span> ondine <span class="k">import</span> <span class="ac">Ondine</span>
+      <div class="panel" id="p-struct"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">QuickPipeline</span>
 
-<span class="k">class</span> <span class="f">ReviewAnalysis</span>(BaseModel):
-    sentiment: <span class="f">str</span>          <span class="c"># "positive" | "neutral" | "negative"</span>
-    score: <span class="f">int</span>              <span class="c"># 1–10</span>
-    key_topic: <span class="f">str</span>
-
-engine = <span class="ac">Ondine</span>(
+<span class="c"># Multiple columns from one prompt — JSON parsed, validated, typed.</span>
+pipeline = <span class="ac">QuickPipeline</span>.<span class="f">create</span>(
+    data=<span class="s">"reviews.csv"</span>,
+    prompt=<span class="s">"Analyze this review: {review}"</span>,
     model=<span class="s">"gpt-5.4-mini"</span>,
-    prompt=<span class="s">"Analyze this customer review."</span>,
-    output_model=ReviewAnalysis,  <span class="c"># fully typed, validated</span>
-    batch_size=<span class="n">50</span>,
+    output_columns=[<span class="s">"sentiment"</span>, <span class="s">"score"</span>, <span class="s">"key_topic"</span>],
+    batch_size=<span class="n">50</span>,                <span class="c"># 50 rows per call → 200 calls, not 10,000</span>
 )
 
-results = engine.<span class="f">run</span>(df)
-<span class="c"># results.sentiment, results.score, results.key_topic — all typed columns</span></pre></div>
+result = pipeline.<span class="f">execute</span>()
+<span class="c"># result.dataframe has sentiment, score, key_topic columns — all parsed.</span></pre></div>
 
-      <div class="panel" id="p-budget"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre>engine = <span class="ac">Ondine</span>(
+      <div class="panel" id="p-budget"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">QuickPipeline</span>
+
+pipeline = <span class="ac">QuickPipeline</span>.<span class="f">create</span>(
+    data=<span class="s">"tickets.csv"</span>,
+    prompt=<span class="s">"Summarize: {ticket_text}"</span>,
     model=<span class="s">"gpt-5.4"</span>,
-    prompt=<span class="s">"Summarize this support ticket."</span>,
+    output_columns=[<span class="s">"summary"</span>],
+    max_budget=<span class="n">5.00</span>,                <span class="c"># hard USD cap — pipeline halts at limit</span>
     batch_size=<span class="n">20</span>,
-    max_cost=<span class="n">5.00</span>,             <span class="c"># hard budget limit in USD</span>
 )
 
-<span class="c"># Always estimate first</span>
-est = engine.<span class="f">estimate</span>(df)
-<span class="f">print</span>(<span class="s">f"Estimated: $</span>{est.total_cost:.4f}<span class="s">"</span>)
-<span class="f">print</span>(<span class="s">f"Batches:   </span>{est.total_batches}<span class="s">"</span>)
+<span class="c"># Estimate before spending a token</span>
+est = pipeline.<span class="f">estimate</span>()
+<span class="f">print</span>(<span class="s">f"Estimated: $</span>{est.total_cost:.4f}<span class="s"> · Batches: </span>{est.total_batches}<span class="s">"</span>)
 
-<span class="c"># Run — stops at $5.00, checkpoints progress</span>
-results = engine.<span class="f">run</span>(df, checkpoint=<span class="s">"tickets.ckpt.json"</span>)</pre></div>
+result = pipeline.<span class="f">execute</span>()  <span class="c"># checkpoints automatically, resumes on crash</span></pre></div>
 
-      <div class="panel" id="p-ctx"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">Ondine</span>, <span class="ac">ContextStore</span>
+      <div class="panel" id="p-ctx"><button class="copy-btn" onclick="copyCode(this)">copy</button><pre><span class="k">from</span> ondine <span class="k">import</span> <span class="ac">PipelineBuilder</span>
+<span class="k">from</span> ondine.context <span class="k">import</span> <span class="ac">RustContextStore</span>
 
-<span class="c"># Ground LLM outputs against known facts</span>
-store = <span class="ac">ContextStore</span>.<span class="f">from_dataframe</span>(
-    df,
-    key_columns=[<span class="s">"employee_id"</span>, <span class="s">"department"</span>],
+<span class="c"># Grounding layer: every LLM answer verified against your evidence</span>
+pipeline = (
+    <span class="ac">PipelineBuilder</span>.<span class="f">create</span>()
+    .<span class="f">from_csv</span>(<span class="s">"reviews.csv"</span>,
+              input_columns=[<span class="s">"review"</span>],
+              output_columns=[<span class="s">"sentiment"</span>, <span class="s">"score"</span>])
+    .<span class="f">with_prompt</span>(<span class="s">"Analyze: {review}"</span>)
+    .<span class="f">with_llm</span>(provider=<span class="s">"openai"</span>, model=<span class="s">"gpt-5.4-mini"</span>)
+    .<span class="f">with_context_store</span>(<span class="ac">RustContextStore</span>(<span class="s">"evidence.db"</span>))
+    .<span class="f">with_grounding</span>(threshold=<span class="n">0.3</span>)     <span class="c"># contradictions flagged, not written</span>
+    .<span class="f">build</span>()
 )
 
-engine = <span class="ac">Ondine</span>(
-    model=<span class="s">"gpt-5.4-mini"</span>,
-    prompt=<span class="s">"Score employee performance 1–10."</span>,
-    context_store=store,          <span class="c"># validates outputs vs. known data</span>
-    batch_size=<span class="n">50</span>,
-)
-
-results = engine.<span class="f">run</span>(df)
-<span class="c"># Hallucinated scores flagged — not silently written</span></pre></div>
+result = pipeline.<span class="f">execute</span>()
+<span class="c"># Rows that failed grounding are marked — auditable, not silent.</span></pre></div>
     </div>
   </div>
 </div>
